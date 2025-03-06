@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, RefreshCw, Clock, CheckCircle, Mic, Music, Play, Save, Download, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Textarea } from "@/components/ui/textarea";
 
 // Mock data for meditation options
 const meditationStyles = [
@@ -38,18 +38,20 @@ const meditationStyles = [
   }
 ];
 
+// Update voice options to map to OpenAI voices
 const voiceOptions = [
-  { id: "emma", name: "Emma", description: "Warm and soothing female voice", recommended: "mindfulness" },
-  { id: "james", name: "James", description: "Deep and calming male voice", recommended: "breathwork" },
-  { id: "lily", name: "Lily", description: "Soft and gentle female voice", recommended: "bodyscan" },
-  { id: "david", name: "David", description: "Clear and focused male voice", recommended: "visualization" }
+  { id: "alloy", name: "Emma", description: "Warm and soothing female voice", recommended: "mindfulness" },
+  { id: "echo", name: "James", description: "Deep and calming male voice", recommended: "breathwork" },
+  { id: "nova", name: "Lily", description: "Soft and gentle female voice", recommended: "bodyscan" },
+  { id: "onyx", name: "David", description: "Clear and focused male voice", recommended: "visualization" }
 ];
 
+// Update background options with correct public paths
 const backgroundOptions = [
   { id: "rain", name: "Gentle Rain", description: "Soft rainfall soundscape" },
   { id: "ocean", name: "Ocean Waves", description: "Rhythmic wave sounds" },
   { id: "forest", name: "Forest Ambience", description: "Birds and gentle breeze" },
-  { id: "whitenoise", name: "White Noise", description: "Consistent ambient sound" },
+  { id: "meditative", name: "Meditative", description: "Calming ambient tones for deep meditation" },
   { id: "none", name: "No Background", description: "Voice guidance only" }
 ];
 
@@ -78,6 +80,11 @@ const CreateMeditation = () => {
   const [isComplete, setIsComplete] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [goals, setGoals] = useState("");
+  const [generatedMeditation, setGeneratedMeditation] = useState(null);
+  const [error, setError] = useState("");
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Get random suggested titles
   const getRandomTitle = () => {
@@ -86,23 +93,52 @@ const CreateMeditation = () => {
   };
 
   // Handle generate meditation
-  const handleGenerate = () => {
-    if (!style || !voice || !background) {
-      toast({
-        title: "Please complete all fields",
-        description: "All options need to be selected before generating.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleCreateMeditation = async () => {
     setIsGenerating(true);
     
-    // Simulate API call with timeout
-    setTimeout(() => {
+    try {
+      // Prepare the data for the API
+      const meditationData = {
+        title: title || `${getStyleName(style)} Meditation`,
+        duration: duration,
+        goals: goals,
+        style: style,
+        voice: voice,
+        backgroundMusic: background !== "none" ? `/music/${background}.mp3` : null
+      };
+      
+      // Call the generate-meditation endpoint
+      const response = await fetch('/api/generate-meditation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(meditationData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate meditation');
+      }
+      
+      const data = await response.json();
+      
+      // Update the meditation data with the response
+      setGeneratedMeditation({
+        id: data.id,
+        title: data.title,
+        audioUrl: data.audioUrl,
+        duration: data.duration
+      });
+      
       setIsGenerating(false);
-      setIsComplete(true);
-    }, 3000);
+      setStep(7); // Move to success screen
+      
+    } catch (error) {
+      console.error('Error generating meditation:', error);
+      setIsGenerating(false);
+      setError('Failed to generate your meditation. Please try again.');
+    }
   };
 
   // Handle saving meditation
@@ -113,6 +149,61 @@ const CreateMeditation = () => {
     });
     navigate("/dashboard");
   };
+
+  // Function to preview background audio
+  const handlePreviewAudio = (audioId: string) => {
+    // If we're already playing this audio, stop it
+    if (playingAudio === audioId) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      setPlayingAudio(null);
+      return;
+    }
+    
+    // If we're playing a different audio, stop that first
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    
+    // Don't try to play if it's the "none" option
+    if (audioId === "none") {
+      setPlayingAudio(null);
+      return;
+    }
+    
+    // Create the correct path to the audio file
+    const audioPath = `/music/${audioId}.mp3`;
+    console.log("Attempting to play audio from:", audioPath);
+    
+    // Create and play the new audio
+    const audio = new Audio(audioPath);
+    audio.volume = 0.5; // Set volume to 50%
+    audio.loop = true;  // Loop the audio
+    audio.play().catch(error => {
+      console.error("Error playing audio:", error);
+      toast({
+        title: "Playback Error",
+        description: "Could not play the audio sample. Please try again.",
+        variant: "destructive"
+      });
+    });
+    
+    audioRef.current = audio;
+    setPlayingAudio(audioId);
+  };
+  
+  // Stop audio when component unmounts
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-meditation-tranquil">
@@ -191,6 +282,22 @@ const CreateMeditation = () => {
                       {title ? "New" : ""}
                     </Button>
                   </div>
+                </div>
+
+                {/* Add Goals Input Field */}
+                <div className="mb-6">
+                  <Label htmlFor="goals" className="mb-2 block">Meditation Goals</Label>
+                  <Textarea
+                    id="goals"
+                    value={goals}
+                    onChange={(e) => setGoals(e.target.value)}
+                    placeholder="e.g. Reduce stress, improve focus, find inner peace"
+                    className="resize-none"
+                    rows={3}
+                  />
+                  <p className="text-xs text-foreground/70 mt-1">
+                    Describe what you want to achieve with this meditation
+                  </p>
                 </div>
 
                 <div className="mt-4 flex items-center justify-between">
@@ -344,64 +451,66 @@ const CreateMeditation = () => {
             </div>
           )}
 
-          {/* Step 5: Background Audio */}
+          {/* Step 5: Background Music */}
           {step === 5 && (
             <div className="p-8 animate-fade-in">
               <h2 className="text-2xl font-semibold mb-6 text-center">Background Audio</h2>
-              <p className="text-center text-foreground/70 mb-8">Select optional background sound to enhance your meditation.</p>
+              <p className="text-center text-foreground/70 mb-8">Choose a background sound to enhance your meditation.</p>
               
-              <div className="max-w-xl mx-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                  {backgroundOptions.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-                        background === item.id 
-                          ? 'border-meditation-calm-blue bg-meditation-light-blue/30' 
-                          : 'border-gray-200 hover:border-meditation-calm-blue/50'
+              <div className="max-w-md mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {backgroundOptions.map((option) => (
+                    <div 
+                      key={option.id} 
+                      className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                        background === option.id 
+                          ? 'border-meditation-calm-blue bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      onClick={() => setBackground(item.id)}
+                      onClick={() => setBackground(option.id)}
                     >
-                      <div className="flex items-start">
-                        <div className={`p-2 rounded-md mr-3 ${
-                          background === item.id 
-                            ? 'bg-meditation-calm-blue text-white' 
-                            : 'bg-gray-100 text-gray-500'
-                        }`}>
-                          <Music size={20} />
+                      <div className="flex items-center mb-2">
+                        <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg mr-3">
+                          <Music className="h-5 w-5 text-gray-500" />
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium">{item.name}</h3>
-                          <p className="text-sm text-foreground/70 mt-1">{item.description}</p>
-                          {item.id !== "none" && (
-                            <button className="text-xs text-meditation-deep-blue mt-2 flex items-center">
-                              <Play size={12} className="mr-1" /> 
-                              Preview audio
-                            </button>
-                          )}
+                        <div>
+                          <h3 className="font-medium">{option.name}</h3>
+                          <p className="text-sm text-gray-600">{option.description}</p>
                         </div>
                       </div>
+                      
+                      {option.id !== "none" && (
+                        <button
+                          type="button"
+                          className="text-blue-500 text-sm flex items-center mt-2"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering the parent div's onClick
+                            handlePreviewAudio(option.id);
+                          }}
+                        >
+                          {playingAudio === option.id ? (
+                            <>
+                              <X size={16} className="mr-1" />
+                              Stop audio
+                            </>
+                          ) : (
+                            <>
+                              <Play size={16} className="mr-1" />
+                              Preview audio
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
-
+                
                 <div className="mt-8 flex items-center justify-between">
                   <Button variant="ghost" onClick={() => setStep(4)}>
                     Back
                   </Button>
-                  <Button 
-                    onClick={handleGenerate} 
-                    className="btn-primary"
-                    disabled={isGenerating}
-                  >
-                    {isGenerating ? (
-                      <>
-                        <RefreshCw size={18} className="mr-2 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      "Generate Meditation"
-                    )}
+                  <Button onClick={() => setStep(6)} className="btn-primary">
+                    Continue
                   </Button>
                 </div>
               </div>
@@ -430,7 +539,7 @@ const CreateMeditation = () => {
           )}
 
           {/* Completion Screen */}
-          {isComplete && (
+          {step === 7 && (
             <div className="p-8 animate-fade-in">
               <div className="text-center mb-8">
                 <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
