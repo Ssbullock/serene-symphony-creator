@@ -218,7 +218,3 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(160, 210, 235, 0.5);
 }
-
-/* Add react-icons dependency */
-<lov-add-dependency>react-icons@latest</lov-add-dependency>
-
