@@ -7,11 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, CheckCircle, CreditCard, User, Bell, Shield, HelpCircle } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [currentPlan, setCurrentPlan] = useState("monthly"); // Assume default is monthly
+  const isMobile = useIsMobile();
 
   const handleUpgrade = (plan: string) => {
     // In a real app, this would trigger a payment flow
@@ -31,10 +33,8 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen flex bg-meditation-tranquil">
-      {/* Sidebar would be here, but we're reusing the existing one from Dashboard */}
-      
       {/* Main content */}
-      <main className="flex-1 ml-64 p-8">
+      <main className={`flex-1 ${isMobile ? 'ml-0 p-4' : 'ml-64 p-8'}`}>
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <header className="mb-8">
@@ -51,7 +51,7 @@ const Settings = () => {
 
           {/* Settings Tabs */}
           <Tabs defaultValue="subscription" className="w-full">
-            <TabsList className="grid grid-cols-5 w-full max-w-3xl mb-8">
+            <TabsList className={`grid ${isMobile ? 'grid-cols-2 gap-y-2' : 'grid-cols-5'} w-full max-w-3xl mb-8`}>
               <TabsTrigger value="subscription">Subscription</TabsTrigger>
               <TabsTrigger value="account">Account</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -71,13 +71,13 @@ const Settings = () => {
                   <div className="mb-6">
                     <h3 className="text-lg font-medium mb-2">Current Plan</h3>
                     <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <div className="flex justify-between items-center">
+                      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
                         <div>
                           <p className="font-medium text-lg">Monthly Plan</p>
                           <p className="text-foreground/70">$12.99 per month</p>
                           <p className="text-sm text-foreground/50 mt-1">Next billing date: November 15, 2023</p>
                         </div>
-                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center">
+                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center self-start md:self-center">
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Active
                         </span>
