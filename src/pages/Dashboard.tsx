@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Play, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X } from "lucide-react";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const savedMeditations = [
   {
@@ -49,7 +48,7 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
 
   const filteredMeditations = savedMeditations.filter(meditation => 
     meditation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
