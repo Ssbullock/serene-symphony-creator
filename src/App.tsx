@@ -14,6 +14,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const CreateMeditation = lazy(() => import("./pages/CreateMeditation"));
 const Auth = lazy(() => import("./pages/Auth"));
+const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -41,6 +42,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <CreateMeditation />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 } 
               />

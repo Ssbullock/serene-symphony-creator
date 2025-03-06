@@ -14,7 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11.2%;
 
-    --primary: 198 69% 67%;
+    /* More vibrant primary color */
+    --primary: 198 85% 67%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -23,7 +24,8 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215 16% 46.9%;
 
-    --accent: 173 58% 39%;
+    /* More vibrant accent color */
+    --accent: 173 70% 39%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84.2% 60.2%;
@@ -31,18 +33,18 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 198 69% 67%;
+    --ring: 198 85% 67%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 198 69% 67%;
+    --sidebar-primary: 198 85% 67%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 198 69% 67%;
+    --sidebar-ring: 198 85% 67%;
   }
 
   .dark {
@@ -55,7 +57,8 @@
     --popover: 224 71% 4%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 198 69% 67%;
+    /* More vibrant primary in dark mode */
+    --primary: 198 85% 67%;
     --primary-foreground: 222 47% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -64,7 +67,8 @@
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 173 58% 39%;
+    /* More vibrant accent in dark mode */
+    --accent: 173 70% 39%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -72,7 +76,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 198 69% 67%;
+    --ring: 198 85% 67%;
   }
 }
 
@@ -89,7 +93,7 @@
 
 @layer components {
   .hero-gradient {
-    background: linear-gradient(120deg, rgba(224, 244, 255, 0.6) 0%, rgba(192, 222, 237, 0.8) 100%);
+    background: linear-gradient(120deg, rgba(234, 244, 255, 0.7) 0%, rgba(192, 232, 255, 0.9) 100%);
     background-size: 200% 200%;
     animation: gradient-shift 15s ease infinite;
   }
@@ -107,7 +111,7 @@
   }
 
   .text-gradient {
-    background: linear-gradient(90deg, #86BBD8 0%, #A0D2EB 50%, #C5E0F5 100%);
+    background: linear-gradient(90deg, #3B82F6 0%, #2DD4BF 50%, #60A5FA 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -117,6 +121,19 @@
     @apply bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2;
     box-shadow: 0 0 20px rgba(160, 210, 235, 0.3);
     transition: all 0.3s ease;
+  }
+  
+  .btn-primary-gradient {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 text-white;
+    background: linear-gradient(90deg, #3B82F6 0%, #2DD4BF 100%);
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary-gradient:hover {
+    background: linear-gradient(90deg, #2563EB 0%, #0D9488 100%);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    transform: translateY(-2px);
   }
 
   .btn-primary:hover {
@@ -201,3 +218,7 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(160, 210, 235, 0.5);
 }
+
+/* Add react-icons dependency */
+<lov-add-dependency>react-icons@latest</lov-add-dependency>
+

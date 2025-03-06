@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Play, Download, Trash, Clock, Settings, LogOut, User, Search } from "lucide-react";
@@ -6,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
-// Mock data for saved meditations
 const savedMeditations = [
   {
     id: 1,
@@ -46,43 +45,52 @@ const savedMeditations = [
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
 
-  // Filter meditations based on search query
   const filteredMeditations = savedMeditations.filter(meditation => 
     meditation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     meditation.style.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Handle meditation deletion
   const handleDelete = (id: number) => {
-    // In a real app, this would call an API to delete the meditation
     toast({
       title: "Meditation deleted",
       description: "The meditation has been removed from your library."
     });
   };
 
-  // Handle meditation playback
   const handlePlay = (id: number) => {
-    // In a real app, this would start playback
     toast({
       title: "Now playing",
       description: "Your meditation is starting..."
     });
   };
 
-  // Handle meditation download
   const handleDownload = (id: number) => {
-    // In a real app, this would download the file
     toast({
       title: "Download started",
       description: "Your meditation is being downloaded."
     });
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account."
+      });
+    } catch (error) {
+      toast({
+        title: "Error logging out",
+        description: "There was a problem logging you out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen flex bg-meditation-tranquil">
-      {/* Sidebar */}
       <aside className="w-64 h-screen bg-white border-r border-gray-100 p-5 flex flex-col fixed left-0 top-0">
         <div className="flex items-center mb-10">
           <div className="h-8 w-8 rounded-full bg-meditation-calm-blue"></div>
@@ -114,22 +122,25 @@ const Dashboard = () => {
               <User size={20} />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium">Alex Johnson</p>
+              <p className="text-sm font-medium">
+                {user?.user_metadata?.name || 'User'}
+              </p>
               <p className="text-xs text-foreground/60">Premium Plan</p>
             </div>
           </div>
           
-          <button className="flex w-full items-center px-3 py-2 text-sm font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors">
+          <button 
+            onClick={handleLogout}
+            className="flex w-full items-center px-3 py-2 text-sm font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
+          >
             <LogOut className="mr-3 h-5 w-5" />
             Logout
           </button>
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 ml-64 p-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
           <header className="mb-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between">
               <div>
@@ -145,7 +156,6 @@ const Dashboard = () => {
             </div>
           </header>
 
-          {/* Search */}
           <div className="mb-8">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground/50" size={18} />
@@ -159,7 +169,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Saved Meditations */}
           <section>
             <h2 className="text-xl font-semibold mb-6">Your Meditations</h2>
             
