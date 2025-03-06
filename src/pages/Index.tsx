@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Play, ArrowRight, CheckCircle, ExternalLink, ChevronDown, ChevronUp, Star } from "lucide-react";
+import { Play, ArrowRight, CheckCircle, ExternalLink, ChevronDown, ChevronUp, Star, Sparkles } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -50,7 +50,6 @@ const Index = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar transparent />
       
-      {/* Enhanced Hero Section with more exciting animations */}
       <section className="pt-32 pb-20 px-4 sm:pt-40 md:pb-32 hero-gradient relative overflow-hidden">
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="max-w-3xl mx-auto text-center">
@@ -72,19 +71,16 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Enhanced Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 h-40 w-40 rounded-full bg-meditation-light-blue opacity-30 animate-float" style={{ animationDelay: "0s" }}></div>
           <div className="absolute top-1/2 left-2/3 h-60 w-60 rounded-full bg-meditation-soft-blue opacity-20 animate-float" style={{ animationDelay: "1s" }}></div>
           <div className="absolute top-3/4 left-1/3 h-32 w-32 rounded-full bg-meditation-calm-blue opacity-20 animate-float" style={{ animationDelay: "2s" }}></div>
           <div className="absolute bottom-1/4 right-1/4 h-48 w-48 rounded-full bg-meditation-deep-blue opacity-10 animate-float" style={{ animationDelay: "1.5s" }}></div>
           
-          {/* New animated elements for more excitement */}
           <div className="absolute top-1/3 right-1/3 h-24 w-24 rounded-full bg-pink-400 opacity-10 animate-breathe" style={{ animationDelay: "1s" }}></div>
           <div className="absolute bottom-1/3 left-1/5 h-36 w-36 rounded-full bg-blue-500 opacity-10 animate-breathe" style={{ animationDelay: "2s" }}></div>
           <div className="absolute top-1/2 right-1/4 h-20 w-20 rounded-full bg-purple-400 opacity-15 animate-breathe" style={{ animationDelay: "0.5s" }}></div>
           
-          {/* Calming transition particles */}
           <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
             <div className="relative w-full h-full max-w-6xl mx-auto">
               <div className="absolute top-1/4 left-1/5 w-2 h-2 rounded-full bg-white opacity-70 animate-ping" style={{ animationDelay: "0.5s" }}></div>
@@ -97,11 +93,19 @@ const Index = () => {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" ref={howItWorksRef} className="py-20 px-4 bg-white">
-        <div className="container mx-auto max-w-6xl">
+      <section id="how-it-works" ref={howItWorksRef} className="py-20 px-4 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 overflow-hidden">
+          <div className="absolute top-1/5 left-1/4 h-32 w-32 rounded-full bg-blue-300 animate-float" style={{ animationDelay: "0.5s" }}></div>
+          <div className="absolute bottom-1/4 right-1/3 h-48 w-48 rounded-full bg-purple-200 animate-float" style={{ animationDelay: "1.2s" }}></div>
+          <div className="absolute top-2/3 left-1/2 h-24 w-24 rounded-full bg-green-200 animate-breathe" style={{ animationDelay: "0.8s" }}></div>
+        </div>
+        
+        <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">How It Works</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 relative inline-block">
+              How It <span className="text-gradient animate-pulse-soft">Works</span>
+              <Sparkles className="absolute -right-6 -top-6 text-yellow-400 animate-pulse-soft" size={24} />
+            </h2>
             <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
               Create your perfect meditation in just a few simple steps
             </p>
@@ -113,7 +117,7 @@ const Index = () => {
                 title: "Choose Your Preferences",
                 description: "Select your meditation style, duration, and specific focus area or goal.",
                 icon: (
-                  <div className="mb-6 inline-flex items-center justify-center h-16 w-16 rounded-full bg-meditation-light-blue text-meditation-deep-blue">
+                  <div className="mb-6 inline-flex items-center justify-center h-16 w-16 rounded-full bg-meditation-light-blue text-meditation-deep-blue animate-breathe">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -125,7 +129,7 @@ const Index = () => {
                 title: "AI Generates Your Meditation",
                 description: "Our AI creates a personalized meditation script based on your preferences.",
                 icon: (
-                  <div className="mb-6 inline-flex items-center justify-center h-16 w-16 rounded-full bg-meditation-light-blue text-meditation-deep-blue">
+                  <div className="mb-6 inline-flex items-center justify-center h-16 w-16 rounded-full bg-meditation-light-blue text-meditation-deep-blue animate-breathe" style={{ animationDelay: "1s" }}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
@@ -137,7 +141,7 @@ const Index = () => {
                 title: "Listen & Download",
                 description: "Enjoy your custom meditation now or save it for later. Download to listen offline anytime.",
                 icon: (
-                  <div className="mb-6 inline-flex items-center justify-center h-16 w-16 rounded-full bg-meditation-light-blue text-meditation-deep-blue">
+                  <div className="mb-6 inline-flex items-center justify-center h-16 w-16 rounded-full bg-meditation-light-blue text-meditation-deep-blue animate-breathe" style={{ animationDelay: "2s" }}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                     </svg>
@@ -148,7 +152,7 @@ const Index = () => {
             ].map((step, index) => (
               <div 
                 key={index} 
-                className={`glass-card p-8 rounded-xl text-center transform transition-all duration-500 ${isVisible.howItWorks ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                className={`glass-card p-8 rounded-xl text-center transform transition-all duration-700 hover:scale-105 hover:shadow-lg ${isVisible.howItWorks ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
                 style={{ transitionDelay: `${step.delay}ms` }}
               >
                 {step.icon}
@@ -159,18 +163,28 @@ const Index = () => {
           </div>
 
           <div className="text-center mt-16">
-            <Link to="/auth" className="inline-flex items-center text-meditation-deep-blue hover:text-meditation-deep-blue/80 font-medium transition-colors">
-              Get Started <ArrowRight size={18} className="ml-2" />
+            <Link to="/auth" className="inline-flex items-center text-meditation-deep-blue hover:text-meditation-deep-blue/80 font-medium transition-colors transform hover:translate-x-1">
+              Get Started <ArrowRight size={18} className="ml-2 animate-bounce-slow" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" ref={featuresRef} className="py-20 px-4 bg-meditation-tranquil">
-        <div className="container mx-auto max-w-6xl">
+      <section id="features" ref={featuresRef} className="py-20 px-4 bg-meditation-tranquil relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-60"></div>
+        
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 right-1/4 w-2 h-2 rounded-full bg-pink-400 opacity-60 animate-ping" style={{ animationDelay: "0.5s" }}></div>
+          <div className="absolute bottom-1/3 left-1/5 w-2 h-2 rounded-full bg-blue-500 opacity-60 animate-ping" style={{ animationDelay: "1.7s" }}></div>
+          <div className="absolute top-2/3 right-1/3 w-2 h-2 rounded-full bg-green-400 opacity-60 animate-ping" style={{ animationDelay: "0.9s" }}></div>
+        </div>
+        
+        <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Key Features</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 relative inline-block">
+              Key <span className="text-gradient animate-pulse-soft">Features</span>
+              <Sparkles className="absolute -right-6 -top-6 text-purple-400 animate-pulse-soft" size={24} />
+            </h2>
             <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
               Discover what makes our AI meditation platform unique
             </p>
@@ -182,7 +196,7 @@ const Index = () => {
                 title: "AI-Powered Narration",
                 description: "Choose from multiple natural-sounding voices with perfect pronunciation and emotional resonance.",
                 icon: (
-                  <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center">
+                  <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center shadow-lg shadow-blue-200/50 animate-pulse-soft">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-4m0 4a3 3 0 116 0v6a3 3 0 01-3 3z" />
                     </svg>
@@ -194,7 +208,7 @@ const Index = () => {
                 title: "Full Customization",
                 description: "Set duration, style, focus areas, and more to create the perfect meditation for your needs.",
                 icon: (
-                  <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center">
+                  <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center shadow-lg shadow-blue-200/50 animate-pulse-soft" style={{animationDelay: "0.3s"}}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
@@ -206,7 +220,7 @@ const Index = () => {
                 title: "Background Audio",
                 description: "Add ambient soundscapes like rain, ocean waves, or gentle music to enhance your practice.",
                 icon: (
-                  <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center">
+                  <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center shadow-lg shadow-blue-200/50 animate-pulse-soft" style={{animationDelay: "0.6s"}}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                     </svg>
@@ -218,7 +232,7 @@ const Index = () => {
                 title: "Save & Download",
                 description: "Build a personal library of meditations tailored to different moods and needs.",
                 icon: (
-                  <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center">
+                  <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center shadow-lg shadow-blue-200/50 animate-pulse-soft" style={{animationDelay: "0.9s"}}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
@@ -229,7 +243,7 @@ const Index = () => {
             ].map((feature, index) => (
               <div 
                 key={index} 
-                className={`flex p-6 bg-white rounded-xl shadow-sm transform transition-all duration-500 ${isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                className={`flex p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-500 hover:scale-102 transform ${isVisible.features ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
                 style={{ transitionDelay: `${feature.delay}ms` }}
               >
                 {feature.icon}
@@ -243,11 +257,18 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" ref={pricingRef} className="py-20 px-4 bg-white">
-        <div className="container mx-auto max-w-6xl">
+      <section id="pricing" ref={pricingRef} className="py-20 px-4 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 overflow-hidden">
+          <div className="absolute top-1/4 left-1/5 h-64 w-64 rounded-full bg-gradient-to-r from-blue-200 to-green-200 animate-float-slow"></div>
+          <div className="absolute bottom-1/3 right-1/5 h-48 w-48 rounded-full bg-gradient-to-r from-purple-200 to-pink-200 animate-float-slow" style={{animationDelay: "1s"}}></div>
+        </div>
+        
+        <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Pricing Plans</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 relative inline-block">
+              Pricing <span className="text-gradient animate-pulse-soft">Plans</span>
+              <Sparkles className="absolute -right-6 -top-6 text-green-400 animate-pulse-soft" size={24} />
+            </h2>
             <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
               Choose the perfect plan for your meditation journey
             </p>
@@ -304,7 +325,7 @@ const Index = () => {
             ].map((plan, index) => (
               <div 
                 key={index}
-                className={`rounded-xl overflow-hidden transition-all duration-500 ${isVisible.pricing ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'} ${plan.popular ? 'border-2 border-meditation-deep-blue shadow-lg transform md:-translate-y-4' : 'border border-gray-200'}`}
+                className={`rounded-xl overflow-hidden transition-all duration-700 hover:shadow-xl ${isVisible.pricing ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'} ${plan.popular ? 'border-2 border-meditation-deep-blue shadow-lg transform md:-translate-y-4 hover:scale-105' : 'border border-gray-200 hover:scale-102'}`}
                 style={{ transitionDelay: `${plan.delay}ms` }}
               >
                 {plan.popular && (
@@ -323,14 +344,14 @@ const Index = () => {
                   <ul className="space-y-4 mb-8">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-start">
-                        <CheckCircle size={20} className="text-meditation-deep-blue flex-shrink-0 mr-2" />
+                        <CheckCircle size={20} className="text-meditation-deep-blue flex-shrink-0 mr-2 animate-pulse-soft" style={{animationDelay: `${i * 0.2}s`}} />
                         <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
                   <Link 
                     to="/auth" 
-                    className={`w-full block text-center py-3 rounded-lg font-medium transition-all ${plan.popular ? 'bg-meditation-deep-blue text-white hover:bg-meditation-deep-blue/90' : 'bg-meditation-light-blue text-foreground hover:bg-meditation-light-blue/90'}`}
+                    className={`w-full block text-center py-3 rounded-lg font-medium transition-all hover:scale-102 ${plan.popular ? 'bg-meditation-deep-blue text-white hover:bg-meditation-deep-blue/90' : 'bg-meditation-light-blue text-foreground hover:bg-meditation-light-blue/90'}`}
                   >
                     {plan.btnText}
                   </Link>
@@ -347,11 +368,21 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section id="testimonials" ref={testimonialsRef} className="py-20 px-4 bg-meditation-tranquil">
-        <div className="container mx-auto max-w-6xl">
+      <section id="testimonials" ref={testimonialsRef} className="py-20 px-4 bg-meditation-tranquil relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-50 via-transparent to-purple-50 opacity-70"></div>
+        
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 left-1/3 w-2 h-2 rounded-full bg-yellow-300 opacity-50 animate-ping" style={{animationDelay: "1.3s"}}></div>
+          <div className="absolute top-1/2 right-1/4 w-2 h-2 rounded-full bg-blue-300 opacity-50 animate-ping" style={{animationDelay: "0.7s"}}></div>
+          <div className="absolute bottom-1/3 left-1/2 w-2 h-2 rounded-full bg-green-300 opacity-50 animate-ping" style={{animationDelay: "2.1s"}}></div>
+        </div>
+        
+        <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">What Our Users Say</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 relative inline-block">
+              What Our <span className="text-gradient animate-pulse-soft">Users</span> Say
+              <Sparkles className="absolute -right-6 -top-6 text-yellow-400 animate-pulse-soft" size={24} />
+            </h2>
             <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
               Join thousands of people who have transformed their meditation practice
             </p>
@@ -383,17 +414,21 @@ const Index = () => {
             ].map((testimonial, index) => (
               <div 
                 key={index}
-                className={`glass-card p-8 rounded-xl transition-all duration-500 ${isVisible.testimonials ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                className={`glass-card p-8 rounded-xl transition-all duration-700 hover:scale-105 hover:shadow-lg ${isVisible.testimonials ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
                 style={{ transitionDelay: `${testimonial.delay}ms` }}
               >
                 <div className="flex text-yellow-400 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} size={20} fill="currentColor" />
+                    <Star key={i} size={20} fill="currentColor" className="animate-pulse-soft" style={{animationDelay: `${i * 0.2}s`}} />
                   ))}
                 </div>
-                <p className="text-foreground/80 mb-6 italic">"{testimonial.quote}"</p>
+                <p className="text-foreground/80 mb-6 italic relative">
+                  <span className="absolute -top-4 -left-2 text-4xl text-blue-200 opacity-50">"</span>
+                  {testimonial.quote}
+                  <span className="absolute -bottom-4 -right-2 text-4xl text-blue-200 opacity-50">"</span>
+                </p>
                 <div className="flex items-center">
-                  <div className="h-12 w-12 rounded-full bg-meditation-calm-blue flex items-center justify-center text-white font-medium">
+                  <div className="h-12 w-12 rounded-full bg-meditation-calm-blue flex items-center justify-center text-white font-medium animate-pulse-soft">
                     {testimonial.author.charAt(0)}
                   </div>
                   <div className="ml-4">
@@ -402,7 +437,7 @@ const Index = () => {
                   </div>
                 </div>
                 <div className="mt-4">
-                  <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">Verified User</span>
+                  <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full animate-pulse-soft">Verified User</span>
                 </div>
               </div>
             ))}
@@ -410,7 +445,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* FAQ Section */}
       <section id="faq" className="py-20 px-4 bg-white">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-16">
@@ -463,7 +497,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Final CTA Section */}
       <section className="py-20 px-4 bg-meditation-calm-blue/10">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to Transform Your Meditation Practice?</h2>

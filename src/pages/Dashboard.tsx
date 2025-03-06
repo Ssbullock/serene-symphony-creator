@@ -1,11 +1,13 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Play, Download, Trash, Clock, Settings, LogOut, User, Search } from "lucide-react";
+import { Plus, Play, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useMobile } from "@/hooks/use-mobile";
 
 const savedMeditations = [
   {
@@ -44,8 +46,10 @@ const savedMeditations = [
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const isMobile = useMobile();
 
   const filteredMeditations = savedMeditations.filter(meditation => 
     meditation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -89,27 +93,57 @@ const Dashboard = () => {
     }
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
     <div className="min-h-screen flex bg-meditation-tranquil">
-      <aside className="w-64 h-screen bg-white border-r border-gray-100 p-5 flex flex-col fixed left-0 top-0">
-        <div className="flex items-center mb-10">
+      {/* Mobile sidebar toggle button */}
+      <button 
+        onClick={toggleSidebar} 
+        className="md:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-md shadow-md"
+        aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+      >
+        {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+      {/* Sidebar with responsive behavior */}
+      <aside 
+        className={`${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } transition-transform duration-300 ease-in-out w-64 h-screen bg-white border-r border-gray-100 p-5 flex flex-col fixed left-0 top-0 z-40 md:translate-x-0`}
+      >
+        <div className="flex items-center mb-10 mt-4 md:mt-0">
           <div className="h-8 w-8 rounded-full bg-meditation-calm-blue"></div>
           <span className="text-xl font-medium ml-2">Serene</span>
         </div>
 
         <div className="flex-1">
           <nav className="space-y-1">
-            <Link to="/dashboard" className="flex items-center px-3 py-2 text-md font-medium rounded-md bg-meditation-light-blue text-foreground">
+            <Link 
+              to="/dashboard" 
+              className="flex items-center px-3 py-2 text-md font-medium rounded-md bg-meditation-light-blue text-foreground"
+              onClick={() => isMobile && setSidebarOpen(false)}
+            >
               <Clock className="mr-3 h-5 w-5" />
               My Meditations
             </Link>
             
-            <Link to="/create" className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors">
+            <Link 
+              to="/create" 
+              className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
+              onClick={() => isMobile && setSidebarOpen(false)}
+            >
               <Plus className="mr-3 h-5 w-5" />
               Create New
             </Link>
 
-            <Link to="/settings" className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors">
+            <Link 
+              to="/settings" 
+              className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
+              onClick={() => isMobile && setSidebarOpen(false)}
+            >
               <Settings className="mr-3 h-5 w-5" />
               Settings
             </Link>
@@ -139,12 +173,24 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      <main className="flex-1 ml-64 p-8">
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 z-30 md:hidden" 
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Main content with responsive margin */}
+      <main className={`flex-1 p-6 sm:p-8 transition-all duration-300 ${
+        isMobile ? 'ml-0 mt-16' : 'md:ml-64'
+      }`}>
         <div className="max-w-6xl mx-auto">
           <header className="mb-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold">Welcome back, Alex</h1>
+                <h1 className="text-2xl md:text-3xl font-bold">Welcome back, Alex</h1>
                 <p className="text-foreground/70 mt-1">Your meditation journey continues</p>
               </div>
               <div className="mt-4 md:mt-0">
@@ -180,13 +226,13 @@ const Dashboard = () => {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {filteredMeditations.map((meditation) => (
-                  <Card key={meditation.id} className="overflow-hidden transition-all duration-300 hover:shadow-md">
+                  <Card key={meditation.id} className="overflow-hidden transition-all duration-300 hover:shadow-md hover:scale-102">
                     <div className={`h-3 bg-${meditation.thumbnail}`}></div>
-                    <CardContent className="p-5">
+                    <CardContent className="p-4 sm:p-5">
                       <h3 className="font-semibold text-lg mb-2">{meditation.title}</h3>
-                      <div className="flex items-center text-sm text-foreground/70 mb-4">
+                      <div className="flex flex-wrap items-center text-sm text-foreground/70 mb-4">
                         <span className="mr-3">{meditation.duration}</span>
                         <span className="mr-3">•</span>
                         <span>{meditation.style}</span>
@@ -194,7 +240,7 @@ const Dashboard = () => {
                       <div className="text-xs text-foreground/60 mb-4">
                         Created {meditation.created}
                       </div>
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button 
                           size="sm" 
                           className="bg-meditation-calm-blue hover:bg-meditation-calm-blue/90 text-white"
