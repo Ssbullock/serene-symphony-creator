@@ -244,3 +244,33 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(160, 210, 235, 0.5);
 }
+
+/* Make sure animation durations are available */
+@layer utilities {
+  .duration-1500 {
+    transition-duration: 1500ms;
+  }
+  .duration-2000 {
+    transition-duration: 2000ms;
+  }
+  .duration-3000 {
+    transition-duration: 3000ms;
+  }
+  .duration-4000 {
+    transition-duration: 4000ms;
+  }
+  .duration-5000 {
+    transition-duration: 5000ms;
+  }
+  .duration-10000 {
+    transition-duration: 10000ms;
+  }
+}
+
+/* Remove old App.css styles which may be conflicting */
+#root {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}

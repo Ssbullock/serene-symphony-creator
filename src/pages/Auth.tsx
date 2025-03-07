@@ -101,14 +101,14 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 overflow-hidden relative">
-      {/* Dynamic animated background based on scene state */}
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden relative">
+      {/* Enhanced animated background with better contrast and visibility */}
       <div className={`absolute inset-0 overflow-hidden -z-10 transition-colors duration-10000 ${
         sceneState === "night" 
           ? "bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-950" 
           : "bg-gradient-to-b from-sky-300 via-blue-300 to-indigo-300"
       }`}>
-        {/* Sun/Moon */}
+        {/* Sun/Moon with improved visibility */}
         <div className={`absolute transition-all duration-10000 ${
           sceneState === "night" 
             ? "top-10 right-10 text-yellow-100 opacity-80" 
@@ -121,7 +121,7 @@ const Auth = () => {
           )}
         </div>
         
-        {/* Clouds */}
+        {/* Clouds with better visibility */}
         <div className="absolute top-1/4 left-1/4 text-white opacity-70 animate-float" style={{ animationDelay: "0s" }}>
           <Cloud className="h-16 w-16 " />
         </div>
@@ -142,18 +142,20 @@ const Auth = () => {
       </div>
 
       <div className="w-full max-w-md mx-auto">
+        {/* Breathing circle animation with better colors */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative h-20 w-20 mb-4">
-            <div className="absolute inset-0 bg-meditation-calm-blue rounded-full animate-breathe opacity-20"></div>
-            <div className="absolute inset-2 bg-meditation-calm-blue rounded-full animate-breathe opacity-40" style={{ animationDelay: "0.5s" }}></div>
-            <div className="absolute inset-4 bg-meditation-calm-blue rounded-full animate-breathe opacity-60" style={{ animationDelay: "1s" }}></div>
-            <div className="absolute inset-6 bg-meditation-calm-blue rounded-full animate-breathe opacity-80" style={{ animationDelay: "1.5s" }}></div>
+            <div className="absolute inset-0 bg-blue-500 rounded-full animate-breathe opacity-20"></div>
+            <div className="absolute inset-2 bg-blue-500 rounded-full animate-breathe opacity-40" style={{ animationDelay: "0.5s" }}></div>
+            <div className="absolute inset-4 bg-blue-500 rounded-full animate-breathe opacity-60" style={{ animationDelay: "1s" }}></div>
+            <div className="absolute inset-6 bg-blue-500 rounded-full animate-breathe opacity-80" style={{ animationDelay: "1.5s" }}></div>
           </div>
           <h1 className="text-3xl font-light tracking-wide text-white mb-2 text-shadow">Serene</h1>
           <p className="text-xl text-white/90 animate-fade-in text-shadow">Breathe in. Breathe out. Begin.</p>
         </div>
 
-        <div className="bg-white/20 backdrop-blur-md rounded-lg shadow-lg p-8 animate-scale-in border border-white/30">
+        {/* Enhanced glass card with better contrast */}
+        <div className="bg-white/30 backdrop-blur-md rounded-lg shadow-lg p-8 animate-scale-in border border-white/40">
           <h2 className="text-2xl font-medium mb-6 text-center text-white text-shadow">
             {isSignUp ? "Create an account" : "Welcome back"}
           </h2>
@@ -161,7 +163,7 @@ const Auth = () => {
           <form onSubmit={handleSignUp} className="space-y-5">
             {isSignUp && (
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-white text-shadow">Full Name</Label>
+                <Label htmlFor="name" className="text-white font-medium text-shadow">Full Name</Label>
                 <Input 
                   id="name"
                   name="name"
@@ -169,13 +171,13 @@ const Auth = () => {
                   placeholder="Your name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="transition-all duration-300 focus:ring-meditation-calm-blue bg-white/30 text-white placeholder:text-white/70 border-white/30"
+                  className="transition-all duration-300 focus:ring-blue-500 bg-white/50 text-gray-800 placeholder:text-gray-600 border-white/50"
                 />
               </div>
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white text-shadow">Email</Label>
+              <Label htmlFor="email" className="text-white font-medium text-shadow">Email</Label>
               <Input 
                 id="email"
                 name="email"
@@ -183,12 +185,12 @@ const Auth = () => {
                 placeholder="your.email@example.com"
                 value={formData.email}
                 onChange={handleChange}
-                className="transition-all duration-300 focus:ring-meditation-calm-blue bg-white/30 text-white placeholder:text-white/70 border-white/30"
+                className="transition-all duration-300 focus:ring-blue-500 bg-white/50 text-gray-800 placeholder:text-gray-600 border-white/50"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white text-shadow">Password</Label>
+              <Label htmlFor="password" className="text-white font-medium text-shadow">Password</Label>
               <Input 
                 id="password"
                 name="password"
@@ -196,14 +198,14 @@ const Auth = () => {
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
-                className="transition-all duration-300 focus:ring-meditation-calm-blue bg-white/30 text-white placeholder:text-white/70 border-white/30"
+                className="transition-all duration-300 focus:ring-blue-500 bg-white/50 text-gray-800 placeholder:text-gray-600 border-white/50"
               />
             </div>
             
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-white/30 hover:bg-white/40 text-white rounded-md transition-all border border-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-70 disabled:cursor-not-allowed shadow-md"
+              className="w-full py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-all border border-blue-400 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-70 disabled:cursor-not-allowed shadow-md"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
@@ -219,10 +221,10 @@ const Auth = () => {
           
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/30"></div>
+              <div className="w-full border-t border-white/40"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white/10 backdrop-blur-sm text-white/80">
+              <span className="px-2 bg-white/20 backdrop-blur-sm text-white font-medium">
                 Or continue with
               </span>
             </div>
@@ -232,10 +234,10 @@ const Auth = () => {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white/20 hover:bg-white/30 border border-white/30 rounded-md shadow-sm text-sm font-medium text-white backdrop-blur-sm hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:ring-white/30 transition-all duration-300"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white/50 hover:bg-white/60 border border-white/50 rounded-md shadow-sm text-sm font-medium text-gray-800 backdrop-blur-sm hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:ring-white/40 transition-all duration-300"
           >
             {isGoogleLoading ? (
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -250,7 +252,7 @@ const Auth = () => {
           <div className="mt-6 text-center">
             <button 
               onClick={handleToggleMode} 
-              className="text-white/90 hover:text-white hover:underline focus:outline-none transition-colors text-shadow"
+              className="text-white hover:text-white/90 hover:underline focus:outline-none transition-colors text-shadow font-medium"
             >
               {isSignUp ? "Already have an account? Log in" : "Need an account? Sign up"}
             </button>

@@ -51,12 +51,13 @@ const Settings = () => {
 
           {/* Settings Tabs */}
           <Tabs defaultValue="subscription" className="w-full">
-            <TabsList className={`grid ${isMobile ? 'grid-cols-2 gap-y-2' : 'grid-cols-5'} w-full max-w-3xl mb-8`}>
-              <TabsTrigger value="subscription">Subscription</TabsTrigger>
-              <TabsTrigger value="account">Account</TabsTrigger>
-              <TabsTrigger value="notifications">Notifications</TabsTrigger>
-              <TabsTrigger value="privacy">Privacy</TabsTrigger>
-              <TabsTrigger value="help">Help</TabsTrigger>
+            {/* Fixed the mobile TabsList layout to use flex-wrap and smaller tabs for better mobile display */}
+            <TabsList className={`${isMobile ? 'flex flex-wrap gap-2 justify-start mb-4' : 'grid grid-cols-5 gap-2'} w-full max-w-3xl mb-8`}>
+              <TabsTrigger value="subscription" className={isMobile ? 'text-sm px-3 py-1.5' : ''}>Subscription</TabsTrigger>
+              <TabsTrigger value="account" className={isMobile ? 'text-sm px-3 py-1.5' : ''}>Account</TabsTrigger>
+              <TabsTrigger value="notifications" className={isMobile ? 'text-sm px-3 py-1.5' : ''}>Notifications</TabsTrigger>
+              <TabsTrigger value="privacy" className={isMobile ? 'text-sm px-3 py-1.5' : ''}>Privacy</TabsTrigger>
+              <TabsTrigger value="help" className={isMobile ? 'text-sm px-3 py-1.5' : ''}>Help</TabsTrigger>
             </TabsList>
 
             <TabsContent value="subscription" className="animate-fade-in">
