@@ -2,7 +2,8 @@
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/675dd1ff-f315-4adc-a402-ea88c4892a37
+**URL**: 
+https://lovable.dev/projects/675dd1ff-f315-4adc-a402-ea88c4892a37
 https://serene-meditations.netlify.app/
 ## What technologies are used for this project?
 
