@@ -33,7 +33,13 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <Link to="/" className="flex items-center">
-            <div className="mr-2 h-8 w-8 rounded-full bg-meditation-calm-blue animate-pulse-soft"></div>
+            {/* Replace static circle with breathing animation logo */}
+            <div className="relative h-8 w-8 mr-2">
+              <div className="absolute inset-0 bg-meditation-calm-blue rounded-full animate-breathe opacity-20"></div>
+              <div className="absolute inset-1 bg-meditation-calm-blue rounded-full animate-breathe opacity-40" style={{ animationDelay: "0.5s" }}></div>
+              <div className="absolute inset-2 bg-meditation-calm-blue rounded-full animate-breathe opacity-60" style={{ animationDelay: "1s" }}></div>
+              <div className="absolute inset-3 bg-meditation-calm-blue rounded-full animate-breathe opacity-80" style={{ animationDelay: "1.5s" }}></div>
+            </div>
             <span className="text-xl font-medium text-foreground">Serene</span>
           </Link>
 

@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Play, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X } from "lucide-react";
+import { Plus, Play, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const savedMeditations = [
   {
@@ -49,6 +50,8 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
+
+  const firstName = user?.user_metadata?.name?.split(' ')[0] || 'there';
 
   const filteredMeditations = savedMeditations.filter(meditation => 
     meditation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -98,7 +101,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex bg-meditation-tranquil">
-      {/* Mobile sidebar toggle button */}
       <button 
         onClick={toggleSidebar} 
         className="md:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-md shadow-md"
@@ -107,14 +109,18 @@ const Dashboard = () => {
         {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      {/* Sidebar with responsive behavior */}
       <aside 
         className={`${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         } transition-transform duration-300 ease-in-out w-64 h-screen bg-white border-r border-gray-100 p-5 flex flex-col fixed left-0 top-0 z-40 md:translate-x-0`}
       >
         <div className="flex items-center mb-10 mt-4 md:mt-0">
-          <div className="h-8 w-8 rounded-full bg-meditation-calm-blue"></div>
+          <div className="relative h-8 w-8 mr-2">
+            <div className="absolute inset-0 bg-meditation-calm-blue rounded-full animate-breathe opacity-20"></div>
+            <div className="absolute inset-1 bg-meditation-calm-blue rounded-full animate-breathe opacity-40" style={{ animationDelay: "0.5s" }}></div>
+            <div className="absolute inset-2 bg-meditation-calm-blue rounded-full animate-breathe opacity-60" style={{ animationDelay: "1s" }}></div>
+            <div className="absolute inset-3 bg-meditation-calm-blue rounded-full animate-breathe opacity-80" style={{ animationDelay: "1.5s" }}></div>
+          </div>
           <span className="text-xl font-medium ml-2">Serene</span>
         </div>
 
@@ -172,7 +178,6 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      {/* Overlay for mobile */}
       {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/20 z-30 md:hidden" 
@@ -181,7 +186,6 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Main content with responsive margin */}
       <main className={`flex-1 p-6 sm:p-8 transition-all duration-300 ${
         isMobile ? 'ml-0 mt-16' : 'md:ml-64'
       }`}>
@@ -189,7 +193,7 @@ const Dashboard = () => {
           <header className="mb-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Welcome back, Alex</h1>
+                <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {firstName}</h1>
                 <p className="text-foreground/70 mt-1">Your meditation journey continues</p>
               </div>
               <div className="mt-4 md:mt-0">
@@ -215,7 +219,21 @@ const Dashboard = () => {
           </div>
 
           <section>
-            <h2 className="text-xl font-semibold mb-6">Your Meditations</h2>
+            <div className="flex items-center mb-6">
+              <h2 className="text-xl font-semibold">Your Meditations</h2>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="ml-2 text-gray-500 hover:text-gray-700 transition-colors">
+                      <Info size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs bg-white p-3 rounded-lg shadow-lg">
+                    <p className="text-sm">Your meditations become more helpful the more specific they are to your personal goals. Include details about what you want to achieve in your meditation script.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             
             {filteredMeditations.length === 0 ? (
               <div className="text-center py-12">

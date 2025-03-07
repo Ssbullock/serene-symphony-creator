@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -18,17 +17,26 @@ const Auth = () => {
     password: "",
     name: "",
   });
-  const [sceneState, setSceneState] = useState<"day" | "night">("day");
   
-  // Switch between day and night scenes
+  const [dayNightProgress, setDayNightProgress] = useState(0);
+
   useEffect(() => {
+    const intervalDuration = 80;
+    const totalTransitionTime = 20000;
+    const steps = totalTransitionTime / intervalDuration;
+    const stepValue = 1 / steps;
+    
     const interval = setInterval(() => {
-      setSceneState(prev => prev === "day" ? "night" : "day");
-    }, 20000); // Change scene every 20 seconds
+      setDayNightProgress(prev => {
+        if (prev >= 1) return 0;
+        if (prev <= 0) return stepValue;
+        return prev + stepValue;
+      });
+    }, intervalDuration);
     
     return () => clearInterval(interval);
   }, []);
-  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -100,49 +108,92 @@ const Auth = () => {
     }
   };
 
+  const getSkyGradient = () => {
+    if (dayNightProgress < 0.5) {
+      const normalizedProgress = dayNightProgress * 2;
+      return `bg-gradient-to-b from-sky-${Math.round(300 - normalizedProgress * 100)} via-blue-${Math.round(300 - normalizedProgress * 100)} to-indigo-${Math.round(300 - normalizedProgress * 200)}`;
+    } else {
+      const normalizedProgress = (dayNightProgress - 0.5) * 2;
+      return `bg-gradient-to-b from-indigo-${Math.round(700 + normalizedProgress * 200)} via-purple-${Math.round(600 + normalizedProgress * 300)} to-blue-${Math.round(800 + normalizedProgress * 150)}`;
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden relative">
-      {/* Enhanced animated background with better contrast and visibility */}
-      <div className={`absolute inset-0 overflow-hidden -z-10 transition-colors duration-10000 ${
-        sceneState === "night" 
-          ? "bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-950" 
-          : "bg-gradient-to-b from-sky-300 via-blue-300 to-indigo-300"
-      }`}>
-        {/* Sun/Moon with improved visibility */}
-        <div className={`absolute transition-all duration-10000 ${
-          sceneState === "night" 
-            ? "top-10 right-10 text-yellow-100 opacity-80" 
-            : "top-10 left-10 text-yellow-400 opacity-90"
-        }`}>
-          {sceneState === "night" ? (
-            <Moon className="h-20 w-20 animate-float-slow" />
+      <div className="absolute inset-0 overflow-hidden -z-10 transition-colors duration-10000">
+        <div className={`absolute inset-0 transition-all duration-10000 ${
+          dayNightProgress < 0.5 
+            ? "bg-gradient-to-b from-sky-300 via-blue-300 to-indigo-300" 
+            : "bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-950"
+        }`} style={{
+          opacity: 1,
+        }}></div>
+        
+        <div className="absolute transition-all duration-10000" style={{
+          left: dayNightProgress < 0.5 
+            ? `${(1 - dayNightProgress * 2) * 10 + (dayNightProgress * 2) * 85}%` 
+            : `${((dayNightProgress - 0.5) * 2) * 10 + (1 - (dayNightProgress - 0.5) * 2) * 85}%`,
+          top: `${Math.sin(dayNightProgress * Math.PI) * 60 + 10}%`,
+          transform: 'translate(-50%, -50%)',
+          opacity: dayNightProgress < 0.5 ? 1 - dayNightProgress : dayNightProgress,
+        }}>
+          {dayNightProgress < 0.5 ? (
+            <Sun className={`h-24 w-24 animate-pulse-soft text-yellow-${Math.round(400 + dayNightProgress * 100)}`} />
           ) : (
-            <Sun className="h-24 w-24 animate-pulse-soft" />
+            <Moon className={`h-20 w-20 animate-float-slow text-yellow-${Math.round(100 + (1-dayNightProgress) * 200)}`} />
           )}
         </div>
         
-        {/* Clouds with better visibility */}
-        <div className="absolute top-1/4 left-1/4 text-white opacity-70 animate-float" style={{ animationDelay: "0s" }}>
-          <Cloud className="h-16 w-16 " />
+        <div className="absolute text-white opacity-70 animate-float" 
+             style={{ 
+               animationDelay: "0s", 
+               top: '25%',
+               left: `${(dayNightProgress < 0.5 ? 25 : 70 - dayNightProgress * 90)}%`, 
+               transition: 'left 20000ms linear'
+             }}>
+          <Cloud className="h-16 w-16" />
         </div>
-        <div className="absolute top-1/2 left-2/3 text-white opacity-50 animate-float" style={{ animationDelay: "1s" }}>
+        <div className="absolute text-white opacity-50 animate-float" 
+             style={{ 
+               animationDelay: "1s", 
+               top: '50%',
+               left: `${(dayNightProgress < 0.5 ? 70 - dayNightProgress * 20 : 30 + dayNightProgress * 40)}%`,
+               transition: 'left 15000ms linear'
+             }}>
           <Cloud className="h-20 w-20" />
         </div>
-        <div className="absolute bottom-1/3 right-1/4 text-white opacity-60 animate-float" style={{ animationDelay: "2s" }}>
+        <div className="absolute text-white opacity-60 animate-float" 
+             style={{ 
+               animationDelay: "2s", 
+               bottom: '33%',
+               left: `${(dayNightProgress < 0.5 ? 75 : 25 + dayNightProgress * 50)}%`,
+               transition: 'left 18000ms linear'
+             }}>
           <Cloud className="h-16 w-16" />
         </div>
         
-        {/* Wind currents */}
-        <div className="absolute bottom-20 left-10 text-white opacity-40 animate-bounce-slow">
+        <div className="absolute text-white animate-bounce-slow" 
+             style={{ 
+               opacity: 0.3 + Math.sin(dayNightProgress * Math.PI) * 0.3,
+               bottom: '20%',
+               left: `${(dayNightProgress < 0.5 ? 10 + dayNightProgress * 80 : 90 - (dayNightProgress - 0.5) * 80)}%`,
+               transition: 'left 25000ms linear'
+             }}>
           <Wind className="h-12 w-12" />
         </div>
-        <div className="absolute top-32 right-20 text-white opacity-30 animate-bounce-slow" style={{ animationDelay: "1.5s" }}>
+        <div className="absolute text-white animate-bounce-slow" 
+             style={{ 
+               opacity: 0.2 + Math.sin(dayNightProgress * Math.PI) * 0.3,
+               top: '32%',
+               right: `${(dayNightProgress < 0.5 ? 20 + dayNightProgress * 60 : 80 - (dayNightProgress - 0.5) * 60)}%`,
+               transition: 'right 22000ms linear',
+               animationDelay: "1.5s" 
+             }}>
           <Wind className="h-10 w-10" />
         </div>
       </div>
 
       <div className="w-full max-w-md mx-auto">
-        {/* Breathing circle animation with better colors */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative h-20 w-20 mb-4">
             <div className="absolute inset-0 bg-blue-500 rounded-full animate-breathe opacity-20"></div>
@@ -154,7 +205,6 @@ const Auth = () => {
           <p className="text-xl text-white/90 animate-fade-in text-shadow">Breathe in. Breathe out. Begin.</p>
         </div>
 
-        {/* Enhanced glass card with better contrast */}
         <div className="bg-white/30 backdrop-blur-md rounded-lg shadow-lg p-8 animate-scale-in border border-white/40">
           <h2 className="text-2xl font-medium mb-6 text-center text-white text-shadow">
             {isSignUp ? "Create an account" : "Welcome back"}
