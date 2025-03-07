@@ -23,16 +23,16 @@ const Auth = () => {
   const [dayNightProgress, setDayNightProgress] = useState(0);
 
   useEffect(() => {
-    // Create a smoother transition with smaller interval and more gradual changes
-    const intervalDuration = 50; // Smaller intervals for smoother animation
-    const totalTransitionTime = 20000; // Total cycle time in ms
+    // Create a much smoother transition with smaller interval
+    const intervalDuration = 40; // Even smaller intervals for smoother animation
+    const totalTransitionTime = 30000; // Longer cycle time in ms for more gradual changes
     const steps = totalTransitionTime / intervalDuration;
     const stepValue = 1 / steps;
     
     const interval = setInterval(() => {
       setDayNightProgress(prev => {
-        if (prev >= 1) return 0;
-        return prev + stepValue;
+        const nextValue = prev + stepValue;
+        return nextValue >= 1 ? 0 : nextValue;
       });
     }, intervalDuration);
     
@@ -112,47 +112,92 @@ const Auth = () => {
 
   // Get sky color based on time of day - smoothly transition between colors
   const getSkyGradientStyle = () => {
-    // Smoothly interpolate colors based on dayNightProgress
-    if (dayNightProgress < 0.5) {
-      // Day to sunset transition (0.0 - 0.5)
-      const normalizedProgress = dayNightProgress * 2; // 0 to 1 during first half
+    // Create a much smoother color transition with multiple color stops
+    // We'll define color states for: dawn, day, sunset, dusk, night
+    
+    if (dayNightProgress < 0.25) {
+      // Night to dawn transition (0.0 - 0.25)
+      const normalizedProgress = dayNightProgress * 4; // 0 to 1 during first quarter
       
-      // Interpolate between day colors (blues) and sunset colors (oranges/purples)
+      return {
+        background: `linear-gradient(to bottom, 
+          rgba(25, 25, 112, ${1 - normalizedProgress}) 0%, 
+          rgba(65, 105, 225, ${normalizedProgress}) 15%,
+          rgba(135, 206, 235, ${normalizedProgress}) 60%, 
+          rgba(176, 224, 230, ${normalizedProgress}) 100%)`,
+      };
+    } else if (dayNightProgress < 0.5) {
+      // Dawn to day transition (0.25 - 0.5)
+      const normalizedProgress = (dayNightProgress - 0.25) * 4; // 0 to 1 during second quarter
+      
+      return {
+        background: `linear-gradient(to bottom, 
+          rgba(65, 105, 225, ${1 - normalizedProgress}) 0%, 
+          rgba(135, 206, 235, 1) 15%, 
+          rgba(176, 224, 230, 1) 80%,
+          rgba(255, 255, 255, ${normalizedProgress}) 100%)`,
+      };
+    } else if (dayNightProgress < 0.75) {
+      // Day to sunset transition (0.5 - 0.75)
+      const normalizedProgress = (dayNightProgress - 0.5) * 4; // 0 to 1 during third quarter
+      
       return {
         background: `linear-gradient(to bottom, 
           rgba(135, 206, 235, ${1 - normalizedProgress}) 0%, 
-          rgba(135, 206, 250, ${1 - normalizedProgress}) 40%,
-          rgba(255, 183, 107, ${normalizedProgress}) 60%, 
-          rgba(133, 92, 248, ${normalizedProgress}) 100%)`,
+          rgba(255, 183, 107, ${normalizedProgress}) 20%,
+          rgba(255, 111, 97, ${normalizedProgress}) 60%, 
+          rgba(176, 224, 230, ${1 - normalizedProgress}) 90%)`,
       };
     } else {
-      // Sunset to night transition (0.5 - 1.0)
-      const normalizedProgress = (dayNightProgress - 0.5) * 2; // 0 to 1 during second half
+      // Sunset to night transition (0.75 - 1.0)
+      const normalizedProgress = (dayNightProgress - 0.75) * 4; // 0 to 1 during fourth quarter
       
-      // Interpolate between sunset colors (oranges/purples) and night colors (dark blues)
       return {
         background: `linear-gradient(to bottom, 
           rgba(255, 183, 107, ${1 - normalizedProgress}) 0%, 
-          rgba(133, 92, 248, ${1 - normalizedProgress}) 40%,
-          rgba(25, 25, 112, ${normalizedProgress}) 60%, 
-          rgba(9, 9, 44, ${normalizedProgress}) 100%)`,
+          rgba(133, 92, 248, ${normalizedProgress * 0.5}) 25%,
+          rgba(65, 60, 140, ${normalizedProgress}) 60%, 
+          rgba(25, 25, 112, ${normalizedProgress}) 100%)`,
       };
     }
   };
 
   // Get sun/moon position for rising/setting animation
   const getCelestialPosition = () => {
-    // Create a semi-circular path for sun/moon
-    const angle = dayNightProgress * Math.PI; // 0 to π radians
-    const horizontalPosition = 50 + Math.cos(angle) * 40; // 10% to 90% across screen
-    const verticalPosition = 50 - Math.sin(angle) * 40; // Higher or lower based on time
+    // Create a smoother semi-circular path for sun/moon
+    // Use sine and cosine to create a curved path across the sky
+    
+    // Map dayNightProgress to an angle from 0 to π
+    const angle = Math.PI * (dayNightProgress < 0.5 
+      ? 2 * dayNightProgress // Rise (0 to π) during first half of the day
+      : 2 * (dayNightProgress - 0.5) // Set (0 to π) during second half
+    );
+    
+    // When dayNightProgress is 0 or 1, object should be below horizon
+    // When dayNightProgress is 0.5, object should be at its highest point
+    
+    let horizontalPosition, verticalPosition, scale, opacity;
+    
+    if (dayNightProgress < 0.5) {
+      // Sun rising (0.0 - 0.5)
+      horizontalPosition = 20 + (60 * Math.sin(angle)); // Move from left to right (20% to 80%)
+      verticalPosition = 100 - (70 * Math.sin(angle)); // Move from bottom to top (100% to 30%)
+      scale = 1 + (0.5 * Math.sin(angle)); // Scale up as it rises
+      opacity = Math.sin(angle); // Fade in as it rises
+    } else {
+      // Moon rising (0.5 - 1.0)
+      horizontalPosition = 80 - (60 * Math.sin(angle)); // Move from right to left (80% to 20%)
+      verticalPosition = 100 - (70 * Math.sin(angle)); // Move from bottom to top (100% to 30%)
+      scale = 1 + (0.3 * Math.sin(angle)); // Scale up as it rises
+      opacity = Math.sin(angle); // Fade in as it rises
+    }
     
     return {
       left: `${horizontalPosition}%`,
       top: `${verticalPosition}%`,
-      opacity: Math.sin(dayNightProgress * Math.PI), // Fade in/out at horizon
-      transform: 'translate(-50%, -50%)',
-      transition: 'all 1000ms linear',
+      transform: `translate(-50%, -50%) scale(${scale})`,
+      opacity: opacity,
+      transition: 'all 1500ms ease-in-out',
     };
   };
 
@@ -163,19 +208,60 @@ const Auth = () => {
   const getCloudPositions = (index: number) => {
     // Each cloud has different base position and movement pattern
     const basePositions = [
-      { top: '25%', left: '20%' },
-      { top: '50%', left: '70%' },
-      { top: '35%', left: '40%' }
+      { top: '15%', left: '10%' },
+      { top: '30%', left: '60%' },
+      { top: '25%', left: '30%' }
     ];
     
-    // Calculate cloud movement paths
-    const movement = Math.sin(dayNightProgress * Math.PI * 2 + index) * 20;
+    // Calculate horizontal movement
+    const horizontalMovement = Math.sin(dayNightProgress * Math.PI * 2 + index) * 15;
+    
+    // Calculate vertical movement - clouds should move up slightly during the day
+    const verticalMovement = dayNightProgress < 0.5
+      ? Math.sin(dayNightProgress * Math.PI) * -5 // Move up during day
+      : Math.sin((dayNightProgress - 0.5) * Math.PI) * 5; // Move down during night
+    
+    const baseTop = parseInt(basePositions[index].top, 10);
+    const baseLeft = parseInt(basePositions[index].left, 10);
     
     return {
-      ...basePositions[index],
-      transform: `translateX(${movement}%)`,
-      opacity: 0.6 + Math.sin(dayNightProgress * Math.PI) * 0.4, // Clouds more visible during day
-      transition: 'all 5000ms ease-in-out',
+      top: `${baseTop + verticalMovement}%`,
+      left: `${baseLeft + horizontalMovement}%`,
+      transform: showSun ? 'scale(1.1)' : 'scale(0.9)',
+      opacity: 0.4 + Math.sin(dayNightProgress * Math.PI) * 0.4, // Clouds more visible during day
+      transition: 'all 3000ms ease-in-out',
+    };
+  };
+
+  // Calculate wind effect position and visibility
+  const getWindPosition = (index: number) => {
+    // Wind is more visible during transitions between day and night
+    // Wind should appear to blow clouds across the sky
+    
+    const basePositions = [
+      { bottom: '30%', left: '20%' },
+      { top: '40%', right: '25%' }
+    ];
+    
+    // Wind is more active during dawn and dusk
+    const isMostVisible = 
+      (dayNightProgress > 0.2 && dayNightProgress < 0.3) || 
+      (dayNightProgress > 0.7 && dayNightProgress < 0.8);
+    
+    const opacity = isMostVisible ? 0.6 : 0.2;
+    
+    // Calculate movement to make wind appear to be blowing
+    const movement = Math.sin(dayNightProgress * Math.PI * 4) * 15;
+    
+    const position = basePositions[index];
+    const movementKey = position.left ? 'left' : 'right';
+    const baseValue = parseInt(position[movementKey as keyof typeof position] as string, 10);
+    
+    return {
+      ...position,
+      [movementKey]: `${baseValue + movement}%`,
+      opacity: opacity,
+      transition: 'all 2000ms ease-in-out',
     };
   };
 
@@ -184,7 +270,7 @@ const Auth = () => {
       {/* Sky background with smooth color transition */}
       <div className="absolute inset-0 overflow-hidden -z-10" style={getSkyGradientStyle()}>
         {/* Sun or Moon */}
-        <div className="absolute transition-all duration-5000" style={getCelestialPosition()}>
+        <div className="absolute transition-all duration-3000" style={getCelestialPosition()}>
           {showSun ? (
             <Sun className="h-24 w-24 text-yellow-400 animate-pulse-soft" />
           ) : (
@@ -202,35 +288,23 @@ const Auth = () => {
               animationDelay: `${index * 2}s`,
             }}
           >
-            <Cloud className={`h-${16 + index * 2} w-${16 + index * 2}`} />
+            <Cloud className={`h-${16 + index * 4} w-${16 + index * 4}`} />
           </div>
         ))}
         
         {/* Wind effect that becomes more visible during transitions */}
-        <div 
-          className="absolute text-white animate-bounce-slow" 
-          style={{
-            opacity: 0.3 + Math.sin(dayNightProgress * Math.PI * 2) * 0.3,
-            bottom: '20%',
-            left: `${30 + Math.sin(dayNightProgress * Math.PI * 4) * 20}%`,
-            transition: 'all 3000ms ease-in-out',
-          }}
-        >
-          <Wind className="h-12 w-12" />
-        </div>
-        
-        <div 
-          className="absolute text-white animate-bounce-slow" 
-          style={{
-            opacity: 0.2 + Math.sin(dayNightProgress * Math.PI * 2 + 1) * 0.3,
-            top: '30%',
-            right: `${20 + Math.sin(dayNightProgress * Math.PI * 3) * 25}%`,
-            transition: 'all 4000ms ease-in-out',
-            animationDelay: "1.5s",
-          }}
-        >
-          <Wind className="h-10 w-10" />
-        </div>
+        {[0, 1].map((index) => (
+          <div 
+            key={`wind-${index}`}
+            className="absolute text-white animate-bounce-slow" 
+            style={{
+              ...getWindPosition(index),
+              animationDelay: `${index * 1.5}s`,
+            }}
+          >
+            <Wind className={`h-${10 + index * 2} w-${10 + index * 2}`} />
+          </div>
+        ))}
       </div>
 
       <div className="w-full max-w-md mx-auto">
