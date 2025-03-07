@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
@@ -6,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { FcGoogle } from "react-icons/fc";
 import { Wind, Sun, Moon, Cloud } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -21,15 +23,15 @@ const Auth = () => {
   const [dayNightProgress, setDayNightProgress] = useState(0);
 
   useEffect(() => {
-    const intervalDuration = 80;
-    const totalTransitionTime = 20000;
+    // Create a smoother transition with smaller interval and more gradual changes
+    const intervalDuration = 50; // Smaller intervals for smoother animation
+    const totalTransitionTime = 20000; // Total cycle time in ms
     const steps = totalTransitionTime / intervalDuration;
     const stepValue = 1 / steps;
     
     const interval = setInterval(() => {
       setDayNightProgress(prev => {
         if (prev >= 1) return 0;
-        if (prev <= 0) return stepValue;
         return prev + stepValue;
       });
     }, intervalDuration);
@@ -108,87 +110,125 @@ const Auth = () => {
     }
   };
 
-  const getSkyGradient = () => {
+  // Get sky color based on time of day - smoothly transition between colors
+  const getSkyGradientStyle = () => {
+    // Smoothly interpolate colors based on dayNightProgress
     if (dayNightProgress < 0.5) {
-      const normalizedProgress = dayNightProgress * 2;
-      return `bg-gradient-to-b from-sky-${Math.round(300 - normalizedProgress * 100)} via-blue-${Math.round(300 - normalizedProgress * 100)} to-indigo-${Math.round(300 - normalizedProgress * 200)}`;
+      // Day to sunset transition (0.0 - 0.5)
+      const normalizedProgress = dayNightProgress * 2; // 0 to 1 during first half
+      
+      // Interpolate between day colors (blues) and sunset colors (oranges/purples)
+      return {
+        background: `linear-gradient(to bottom, 
+          rgba(135, 206, 235, ${1 - normalizedProgress}) 0%, 
+          rgba(135, 206, 250, ${1 - normalizedProgress}) 40%,
+          rgba(255, 183, 107, ${normalizedProgress}) 60%, 
+          rgba(133, 92, 248, ${normalizedProgress}) 100%)`,
+      };
     } else {
-      const normalizedProgress = (dayNightProgress - 0.5) * 2;
-      return `bg-gradient-to-b from-indigo-${Math.round(700 + normalizedProgress * 200)} via-purple-${Math.round(600 + normalizedProgress * 300)} to-blue-${Math.round(800 + normalizedProgress * 150)}`;
+      // Sunset to night transition (0.5 - 1.0)
+      const normalizedProgress = (dayNightProgress - 0.5) * 2; // 0 to 1 during second half
+      
+      // Interpolate between sunset colors (oranges/purples) and night colors (dark blues)
+      return {
+        background: `linear-gradient(to bottom, 
+          rgba(255, 183, 107, ${1 - normalizedProgress}) 0%, 
+          rgba(133, 92, 248, ${1 - normalizedProgress}) 40%,
+          rgba(25, 25, 112, ${normalizedProgress}) 60%, 
+          rgba(9, 9, 44, ${normalizedProgress}) 100%)`,
+      };
     }
+  };
+
+  // Get sun/moon position for rising/setting animation
+  const getCelestialPosition = () => {
+    // Create a semi-circular path for sun/moon
+    const angle = dayNightProgress * Math.PI; // 0 to π radians
+    const horizontalPosition = 50 + Math.cos(angle) * 40; // 10% to 90% across screen
+    const verticalPosition = 50 - Math.sin(angle) * 40; // Higher or lower based on time
+    
+    return {
+      left: `${horizontalPosition}%`,
+      top: `${verticalPosition}%`,
+      opacity: Math.sin(dayNightProgress * Math.PI), // Fade in/out at horizon
+      transform: 'translate(-50%, -50%)',
+      transition: 'all 1000ms linear',
+    };
+  };
+
+  // Determine if we're showing sun or moon
+  const showSun = dayNightProgress < 0.5;
+  
+  // Calculate cloud positions that move with time
+  const getCloudPositions = (index: number) => {
+    // Each cloud has different base position and movement pattern
+    const basePositions = [
+      { top: '25%', left: '20%' },
+      { top: '50%', left: '70%' },
+      { top: '35%', left: '40%' }
+    ];
+    
+    // Calculate cloud movement paths
+    const movement = Math.sin(dayNightProgress * Math.PI * 2 + index) * 20;
+    
+    return {
+      ...basePositions[index],
+      transform: `translateX(${movement}%)`,
+      opacity: 0.6 + Math.sin(dayNightProgress * Math.PI) * 0.4, // Clouds more visible during day
+      transition: 'all 5000ms ease-in-out',
+    };
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden relative">
-      <div className="absolute inset-0 overflow-hidden -z-10 transition-colors duration-10000">
-        <div className={`absolute inset-0 transition-all duration-10000 ${
-          dayNightProgress < 0.5 
-            ? "bg-gradient-to-b from-sky-300 via-blue-300 to-indigo-300" 
-            : "bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-950"
-        }`} style={{
-          opacity: 1,
-        }}></div>
-        
-        <div className="absolute transition-all duration-10000" style={{
-          left: dayNightProgress < 0.5 
-            ? `${(1 - dayNightProgress * 2) * 10 + (dayNightProgress * 2) * 85}%` 
-            : `${((dayNightProgress - 0.5) * 2) * 10 + (1 - (dayNightProgress - 0.5) * 2) * 85}%`,
-          top: `${Math.sin(dayNightProgress * Math.PI) * 60 + 10}%`,
-          transform: 'translate(-50%, -50%)',
-          opacity: dayNightProgress < 0.5 ? 1 - dayNightProgress : dayNightProgress,
-        }}>
-          {dayNightProgress < 0.5 ? (
-            <Sun className={`h-24 w-24 animate-pulse-soft text-yellow-${Math.round(400 + dayNightProgress * 100)}`} />
+      {/* Sky background with smooth color transition */}
+      <div className="absolute inset-0 overflow-hidden -z-10" style={getSkyGradientStyle()}>
+        {/* Sun or Moon */}
+        <div className="absolute transition-all duration-5000" style={getCelestialPosition()}>
+          {showSun ? (
+            <Sun className="h-24 w-24 text-yellow-400 animate-pulse-soft" />
           ) : (
-            <Moon className={`h-20 w-20 animate-float-slow text-yellow-${Math.round(100 + (1-dayNightProgress) * 200)}`} />
+            <Moon className="h-20 w-20 text-yellow-100 animate-float-slow" />
           )}
         </div>
         
-        <div className="absolute text-white opacity-70 animate-float" 
-             style={{ 
-               animationDelay: "0s", 
-               top: '25%',
-               left: `${(dayNightProgress < 0.5 ? 25 : 70 - dayNightProgress * 90)}%`, 
-               transition: 'left 20000ms linear'
-             }}>
-          <Cloud className="h-16 w-16" />
-        </div>
-        <div className="absolute text-white opacity-50 animate-float" 
-             style={{ 
-               animationDelay: "1s", 
-               top: '50%',
-               left: `${(dayNightProgress < 0.5 ? 70 - dayNightProgress * 20 : 30 + dayNightProgress * 40)}%`,
-               transition: 'left 15000ms linear'
-             }}>
-          <Cloud className="h-20 w-20" />
-        </div>
-        <div className="absolute text-white opacity-60 animate-float" 
-             style={{ 
-               animationDelay: "2s", 
-               bottom: '33%',
-               left: `${(dayNightProgress < 0.5 ? 75 : 25 + dayNightProgress * 50)}%`,
-               transition: 'left 18000ms linear'
-             }}>
-          <Cloud className="h-16 w-16" />
-        </div>
+        {/* Clouds that move across the sky */}
+        {[0, 1, 2].map((index) => (
+          <div 
+            key={`cloud-${index}`}
+            className="absolute text-white animate-float" 
+            style={{
+              ...getCloudPositions(index),
+              animationDelay: `${index * 2}s`,
+            }}
+          >
+            <Cloud className={`h-${16 + index * 2} w-${16 + index * 2}`} />
+          </div>
+        ))}
         
-        <div className="absolute text-white animate-bounce-slow" 
-             style={{ 
-               opacity: 0.3 + Math.sin(dayNightProgress * Math.PI) * 0.3,
-               bottom: '20%',
-               left: `${(dayNightProgress < 0.5 ? 10 + dayNightProgress * 80 : 90 - (dayNightProgress - 0.5) * 80)}%`,
-               transition: 'left 25000ms linear'
-             }}>
+        {/* Wind effect that becomes more visible during transitions */}
+        <div 
+          className="absolute text-white animate-bounce-slow" 
+          style={{
+            opacity: 0.3 + Math.sin(dayNightProgress * Math.PI * 2) * 0.3,
+            bottom: '20%',
+            left: `${30 + Math.sin(dayNightProgress * Math.PI * 4) * 20}%`,
+            transition: 'all 3000ms ease-in-out',
+          }}
+        >
           <Wind className="h-12 w-12" />
         </div>
-        <div className="absolute text-white animate-bounce-slow" 
-             style={{ 
-               opacity: 0.2 + Math.sin(dayNightProgress * Math.PI) * 0.3,
-               top: '32%',
-               right: `${(dayNightProgress < 0.5 ? 20 + dayNightProgress * 60 : 80 - (dayNightProgress - 0.5) * 60)}%`,
-               transition: 'right 22000ms linear',
-               animationDelay: "1.5s" 
-             }}>
+        
+        <div 
+          className="absolute text-white animate-bounce-slow" 
+          style={{
+            opacity: 0.2 + Math.sin(dayNightProgress * Math.PI * 2 + 1) * 0.3,
+            top: '30%',
+            right: `${20 + Math.sin(dayNightProgress * Math.PI * 3) * 25}%`,
+            transition: 'all 4000ms ease-in-out',
+            animationDelay: "1.5s",
+          }}
+        >
           <Wind className="h-10 w-10" />
         </div>
       </div>
@@ -252,7 +292,7 @@ const Auth = () => {
               />
             </div>
             
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
               className="w-full py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-all border border-blue-400 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-70 disabled:cursor-not-allowed shadow-md"
@@ -266,7 +306,7 @@ const Auth = () => {
                   Processing...
                 </span>
               ) : isSignUp ? "Sign Up" : "Log In"}
-            </button>
+            </Button>
           </form>
           
           <div className="relative my-6">
@@ -280,10 +320,11 @@ const Auth = () => {
             </div>
           </div>
 
-          <button
+          <Button
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading}
+            variant="outline"
             className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white/50 hover:bg-white/60 border border-white/50 rounded-md shadow-sm text-sm font-medium text-gray-800 backdrop-blur-sm hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:ring-white/40 transition-all duration-300"
           >
             {isGoogleLoading ? (
@@ -297,7 +338,7 @@ const Auth = () => {
                 <span>Sign in with Google</span>
               </>
             )}
-          </button>
+          </Button>
           
           <div className="mt-6 text-center">
             <button 
