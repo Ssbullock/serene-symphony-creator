@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, RefreshCw, Clock, CheckCircle, Mic, Music, Play, Save, Download, X, Info, ChevronLeft, ChevronRight } from "lucide-react";
@@ -81,6 +82,22 @@ const suggestedTitles = [
   "Energy Renewal",
   "Emotional Balance"
 ];
+
+// Helper functions to get display names
+const getStyleName = (styleId: string) => {
+  const style = meditationStyles.find(s => s.id === styleId);
+  return style ? style.name : "Custom";
+};
+
+const getVoiceName = (voiceId: string) => {
+  const voice = voiceOptions.find(v => v.id === voiceId);
+  return voice ? voice.name : "Default Voice";
+};
+
+const getBackgroundName = (backgroundId: string) => {
+  const background = backgroundOptions.find(b => b.id === backgroundId);
+  return background ? background.name : "No Background";
+};
 
 const CreateMeditation = () => {
   const [step, setStep] = useState(1);
@@ -635,6 +652,75 @@ const CreateMeditation = () => {
             </div>
           )}
 
+          {/* Step 6: Review and Create */}
+          {step === 6 && (
+            <div className="p-8 animate-fade-in">
+              <h2 className="text-2xl font-semibold mb-6 text-center">Review & Create</h2>
+              <p className="text-center text-foreground/70 mb-8">Review your meditation settings before creating.</p>
+              
+              <div className="max-w-md mx-auto">
+                <div className="bg-blue-50 p-6 rounded-lg mb-6">
+                  <h3 className="font-medium mb-4">Meditation Summary</h3>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-foreground/70">Title:</span>
+                      <span className="font-medium">{title || `${getStyleName(style)} Meditation`}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-foreground/70">Duration:</span>
+                      <span className="font-medium">{duration} minutes</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-foreground/70">Style:</span>
+                      <span className="font-medium">{getStyleName(style) || "Not selected"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-foreground/70">Voice:</span>
+                      <span className="font-medium">{getVoiceName(voice) || "Not selected"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-foreground/70">Background:</span>
+                      <span className="font-medium">{getBackgroundName(background) || "Not selected"}</span>
+                    </div>
+                    {goals && (
+                      <div>
+                        <span className="text-foreground/70 block mb-1">Goals:</span>
+                        <p className="text-sm bg-white p-2 rounded">{goals}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
+                    {error}
+                  </div>
+                )}
+                
+                <div className="mt-8 flex items-center justify-between">
+                  <Button variant="ghost" onClick={() => setStep(5)}>
+                    Back
+                  </Button>
+                  <Button 
+                    onClick={handleCreateMeditation} 
+                    className="btn-primary"
+                    disabled={!style || !voice || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <span className="flex items-center">
+                        <RefreshCw size={16} className="mr-2 animate-spin" />
+                        Creating...
+                      </span>
+                    ) : (
+                      "Create Meditation"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Loading/Generating State */}
           {isGenerating && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in-slow">
@@ -731,4 +817,18 @@ const CreateMeditation = () => {
           <div className="mt-6 flex items-start p-4 bg-meditation-light-blue/50 rounded-lg max-w-xl mx-auto">
             <Info size={20} className="text-meditation-deep-blue mr-3 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-foreground/70">
-              {
+              {step === 1 && "Choose a title that resonates with your intention for this meditation."}
+              {step === 2 && "Shorter sessions are great for beginners, while longer ones allow for deeper practice."}
+              {step === 3 && "Different meditation styles offer unique benefits. Choose one that aligns with your goals."}
+              {step === 4 && "The right voice can significantly enhance your meditation experience."}
+              {step === 5 && "Background sounds help mask distractions and create a peaceful environment."}
+              {step === 6 && "Review your selections before creating your personalized meditation."}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CreateMeditation;
