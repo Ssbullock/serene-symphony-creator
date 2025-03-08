@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, RefreshCw, Clock, CheckCircle, Mic, Music, Play, Save, Download, X, Info, ChevronLeft, ChevronRight } from "lucide-react";
@@ -514,63 +513,71 @@ const CreateMeditation = () => {
               <h2 className="text-2xl font-semibold mb-6 text-center">Select Voice</h2>
               <p className="text-center text-foreground/70 mb-8">Choose the voice for your guided meditation.</p>
               
-              <div className="max-w-md mx-auto">
+              <div className="max-w-3xl mx-auto">
                 <Carousel className="w-full">
                   <CarouselContent>
-                    {voiceOptions.map((option) => (
-                      <CarouselItem key={option.id} className="md:basis-1/2">
-                        <div 
-                          className={`h-full border rounded-lg p-4 cursor-pointer transition-all mx-2 ${
-                            voice === option.id 
-                              ? 'border-meditation-calm-blue bg-blue-50' 
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                          onClick={() => setVoice(option.id)}
-                        >
-                          <div className="flex items-center mb-2">
-                            <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg mr-3">
-                              <Mic className="h-5 w-5 text-gray-500" />
-                            </div>
-                            <div>
-                              <div className="flex items-center">
-                                <h3 className="font-medium">{option.name}</h3>
-                                {option.recommended === style && option.recommended && (
-                                  <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
-                                    Recommended
-                                  </span>
-                                )}
+                    {Array.from({ length: Math.ceil(voiceOptions.length / (isMobile ? 1 : 4)) }).map((_, groupIndex) => (
+                      <CarouselItem key={groupIndex}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-1">
+                          {voiceOptions.slice(
+                            groupIndex * (isMobile ? 1 : 4),
+                            groupIndex * (isMobile ? 1 : 4) + (isMobile ? 1 : 4)
+                          ).map((option) => (
+                            <div 
+                              key={option.id} 
+                              className={`h-full border rounded-lg p-4 cursor-pointer transition-all ${
+                                voice === option.id 
+                                  ? 'border-meditation-calm-blue bg-blue-50' 
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              onClick={() => setVoice(option.id)}
+                            >
+                              <div className="flex items-center mb-2">
+                                <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg mr-3">
+                                  <Mic className="h-5 w-5 text-gray-500" />
+                                </div>
+                                <div>
+                                  <div className="flex items-center">
+                                    <h3 className="font-medium">{option.name}</h3>
+                                    {option.recommended === style && option.recommended && (
+                                      <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                                        Recommended
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-gray-600">{option.description}</p>
+                                </div>
                               </div>
-                              <p className="text-sm text-gray-600">{option.description}</p>
+                              
+                              <button
+                                type="button"
+                                className="text-blue-500 text-sm flex items-center mt-2"
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent triggering the parent div's onClick
+                                  handlePreviewVoice(option.id);
+                                }}
+                              >
+                                {playingVoice === option.id ? (
+                                  <>
+                                    <X size={16} className="mr-1" />
+                                    Stop preview
+                                  </>
+                                ) : (
+                                  <>
+                                    <Play size={16} className="mr-1" />
+                                    Preview voice
+                                  </>
+                                )}
+                              </button>
                             </div>
-                          </div>
-                          
-                          <button
-                            type="button"
-                            className="text-blue-500 text-sm flex items-center mt-2"
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent triggering the parent div's onClick
-                              handlePreviewVoice(option.id);
-                            }}
-                          >
-                            {playingVoice === option.id ? (
-                              <>
-                                <X size={16} className="mr-1" />
-                                Stop preview
-                              </>
-                            ) : (
-                              <>
-                                <Play size={16} className="mr-1" />
-                                Preview voice
-                              </>
-                            )}
-                          </button>
+                          ))}
                         </div>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <div className="flex justify-center mt-4 md:mt-6">
-                    <CarouselPrevious className="relative mr-2 static translate-y-0" />
-                    <CarouselNext className="relative ml-2 static translate-y-0" />
+                  <div className="flex justify-center mt-6">
+                    <CarouselPrevious className="relative mr-4 static translate-y-0" />
+                    <CarouselNext className="relative ml-4 static translate-y-0" />
                   </div>
                 </Carousel>
                 
