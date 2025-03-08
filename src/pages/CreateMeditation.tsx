@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, RefreshCw, Clock, CheckCircle, Mic, Music, Play, Save, Download, X, Info } from "lucide-react";
+import { ArrowLeft, RefreshCw, Clock, CheckCircle, Mic, Music, Play, Save, Download, X, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 // Mock data for meditation options
 const meditationStyles = [
@@ -92,6 +100,7 @@ const CreateMeditation = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
+  const isMobile = useIsMobile();
 
   // Get random suggested titles
   const getRandomTitle = () => {
@@ -489,57 +498,64 @@ const CreateMeditation = () => {
               <p className="text-center text-foreground/70 mb-8">Choose the voice for your guided meditation.</p>
               
               <div className="max-w-md mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {voiceOptions.map((option) => (
-                    <div 
-                      key={option.id} 
-                      className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                        voice === option.id 
-                          ? 'border-meditation-calm-blue bg-blue-50' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => setVoice(option.id)}
-                    >
-                      <div className="flex items-center mb-2">
-                        <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg mr-3">
-                          <Mic className="h-5 w-5 text-gray-500" />
-                        </div>
-                        <div>
-                          <div className="flex items-center">
-                            <h3 className="font-medium">{option.name}</h3>
-                            {option.recommended === style && option.recommended && (
-                              <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
-                                Recommended
-                              </span>
-                            )}
+                <Carousel className="w-full">
+                  <CarouselContent>
+                    {voiceOptions.map((option) => (
+                      <CarouselItem key={option.id} className="md:basis-1/2">
+                        <div 
+                          className={`h-full border rounded-lg p-4 cursor-pointer transition-all mx-2 ${
+                            voice === option.id 
+                              ? 'border-meditation-calm-blue bg-blue-50' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => setVoice(option.id)}
+                        >
+                          <div className="flex items-center mb-2">
+                            <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg mr-3">
+                              <Mic className="h-5 w-5 text-gray-500" />
+                            </div>
+                            <div>
+                              <div className="flex items-center">
+                                <h3 className="font-medium">{option.name}</h3>
+                                {option.recommended === style && option.recommended && (
+                                  <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                                    Recommended
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-600">{option.description}</p>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600">{option.description}</p>
+                          
+                          <button
+                            type="button"
+                            className="text-blue-500 text-sm flex items-center mt-2"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent triggering the parent div's onClick
+                              handlePreviewVoice(option.id);
+                            }}
+                          >
+                            {playingVoice === option.id ? (
+                              <>
+                                <X size={16} className="mr-1" />
+                                Stop preview
+                              </>
+                            ) : (
+                              <>
+                                <Play size={16} className="mr-1" />
+                                Preview voice
+                              </>
+                            )}
+                          </button>
                         </div>
-                      </div>
-                      
-                      <button
-                        type="button"
-                        className="text-blue-500 text-sm flex items-center mt-2"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent triggering the parent div's onClick
-                          handlePreviewVoice(option.id);
-                        }}
-                      >
-                        {playingVoice === option.id ? (
-                          <>
-                            <X size={16} className="mr-1" />
-                            Stop preview
-                          </>
-                        ) : (
-                          <>
-                            <Play size={16} className="mr-1" />
-                            Preview voice
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <div className="flex justify-center mt-4 md:mt-6">
+                    <CarouselPrevious className="relative mr-2 static translate-y-0" />
+                    <CarouselNext className="relative ml-2 static translate-y-0" />
+                  </div>
+                </Carousel>
                 
                 <div className="mt-8 flex items-center justify-between">
                   <Button variant="ghost" onClick={() => setStep(3)}>
@@ -715,33 +731,4 @@ const CreateMeditation = () => {
           <div className="mt-6 flex items-start p-4 bg-meditation-light-blue/50 rounded-lg max-w-xl mx-auto">
             <Info size={20} className="text-meditation-deep-blue mr-3 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-foreground/70">
-              {step === 1 ? "A title helps you identify your meditation later. You can always change it." : 
-               step === 2 ? "Choose a duration that fits your schedule. Shorter sessions are great for beginners." :
-               step === 3 ? "Different meditation styles offer unique benefits. Choose one that addresses your current needs." :
-               step === 4 ? "The voice narrating your meditation can significantly impact your experience." :
-               "Background audio can enhance your meditation experience, but it's completely optional."}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// Helper functions to get names based on IDs
-function getStyleName(styleId: string) {
-  const style = meditationStyles.find(s => s.id === styleId);
-  return style ? style.name : styleId;
-}
-
-function getVoiceName(voiceId: string) {
-  const voice = voiceOptions.find(v => v.id === voiceId);
-  return voice ? voice.name : voiceId;
-}
-
-function getBackgroundName(backgroundId: string) {
-  const background = backgroundOptions.find(b => b.id === backgroundId);
-  return background ? background.name : backgroundId;
-}
-
-export default CreateMeditation;
+              {
