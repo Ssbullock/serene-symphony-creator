@@ -46,17 +46,17 @@ const meditationStyles = [
   }
 ];
 
-// Update voice options to include all OpenAI voices
+// Update voice options to remove IDs in parentheses from display names
 const voiceOptions = [
-  { id: "alloy", name: "Emma (Alloy)", description: "Warm and soothing female voice", recommended: "mindfulness", previewText: "Hi, I'm Emma. I'm a warm and soothing voice who will be guiding you through your meditation today." },
-  { id: "echo", name: "James (Echo)", description: "Deep and calming male voice", recommended: "breathwork", previewText: "Hi, I'm James. I'm a deep and calming voice who will be guiding you through your meditation today." },
-  { id: "nova", name: "Lily (Nova)", description: "Soft and gentle female voice", recommended: "bodyscan", previewText: "Hi, I'm Lily. I'm a soft and gentle voice who will be guiding you through your meditation today." },
-  { id: "onyx", name: "David (Onyx)", description: "Clear and focused male voice", recommended: "visualization", previewText: "Hi, I'm David. I'm a clear and focused voice who will be guiding you through your meditation today." },
-  { id: "shimmer", name: "Sophie (Shimmer)", description: "Bright and optimistic female voice", recommended: "", previewText: "Hi, I'm Sophie. I'm a bright and optimistic voice who will be guiding you through your meditation today." },
-  { id: "fable", name: "Felix (Fable)", description: "Warm storyteller voice", recommended: "", previewText: "Hi, I'm Felix. I'm a warm storyteller voice who will be guiding you through your meditation today." },
-  { id: "coral", name: "Claire (Coral)", description: "Expressive and engaging female voice", recommended: "", previewText: "Hi, I'm Claire. I'm an expressive and engaging voice who will be guiding you through your meditation today." },
-  { id: "sage", name: "Sam (Sage)", description: "Wise and thoughtful voice", recommended: "", previewText: "Hi, I'm Sam. I'm a wise and thoughtful voice who will be guiding you through your meditation today." },
-  { id: "ash", name: "Alex (Ash)", description: "Neutral and versatile voice", recommended: "", previewText: "Hi, I'm Alex. I'm a neutral and versatile voice who will be guiding you through your meditation today." }
+  { id: "alloy", name: "Emma", description: "Warm and soothing female voice", recommended: "mindfulness", previewText: "Hi, I'm Emma. I'm a warm and soothing voice who will be guiding you through your meditation today." },
+  { id: "echo", name: "James", description: "Deep and calming male voice", recommended: "breathwork", previewText: "Hi, I'm James. I'm a deep and calming voice who will be guiding you through your meditation today." },
+  { id: "nova", name: "Lily", description: "Soft and gentle female voice", recommended: "bodyscan", previewText: "Hi, I'm Lily. I'm a soft and gentle voice who will be guiding you through your meditation today." },
+  { id: "onyx", name: "David", description: "Clear and focused male voice", recommended: "visualization", previewText: "Hi, I'm David. I'm a clear and focused voice who will be guiding you through your meditation today." },
+  { id: "shimmer", name: "Sophie", description: "Bright and optimistic female voice", recommended: "", previewText: "Hi, I'm Sophie. I'm a bright and optimistic voice who will be guiding you through your meditation today." },
+  { id: "fable", name: "Felix", description: "Warm storyteller voice", recommended: "", previewText: "Hi, I'm Felix. I'm a warm storyteller voice who will be guiding you through your meditation today." },
+  { id: "coral", name: "Claire", description: "Expressive and engaging female voice", recommended: "", previewText: "Hi, I'm Claire. I'm an expressive and engaging voice who will be guiding you through your meditation today." },
+  { id: "sage", name: "Sam", description: "Wise and thoughtful voice", recommended: "", previewText: "Hi, I'm Sam. I'm a wise and thoughtful voice who will be guiding you through your meditation today." },
+  { id: "ash", name: "Alex", description: "Neutral and versatile voice", recommended: "", previewText: "Hi, I'm Alex. I'm a neutral and versatile voice who will be guiding you through your meditation today." }
 ];
 
 // Update background options with correct public paths
@@ -516,12 +516,12 @@ const CreateMeditation = () => {
               <div className="max-w-3xl mx-auto">
                 <Carousel className="w-full">
                   <CarouselContent>
-                    {Array.from({ length: Math.ceil(voiceOptions.length / (isMobile ? 1 : 4)) }).map((_, groupIndex) => (
+                    {Array.from({ length: Math.ceil(voiceOptions.length / 4) }).map((_, groupIndex) => (
                       <CarouselItem key={groupIndex}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-1">
                           {voiceOptions.slice(
-                            groupIndex * (isMobile ? 1 : 4),
-                            groupIndex * (isMobile ? 1 : 4) + (isMobile ? 1 : 4)
+                            groupIndex * 4,
+                            groupIndex * 4 + 4
                           ).map((option) => (
                             <div 
                               key={option.id} 
@@ -732,7 +732,7 @@ const CreateMeditation = () => {
           {isGenerating && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in-slow">
               <div className="bg-white rounded-xl p-8 max-w-md w-full text-center">
-                <div className="relative h-20 w-20 mx-auto mb-6">
+                <div className="relative h-20 w-20 bg-meditation-calm-blue rounded-full mx-auto mb-6">
                   <div className="absolute inset-0 bg-meditation-calm-blue rounded-full animate-breathe opacity-20"></div>
                   <div className="absolute inset-2 bg-meditation-calm-blue rounded-full animate-breathe opacity-40" style={{ animationDelay: "0.5s" }}></div>
                   <div className="absolute inset-4 bg-meditation-calm-blue rounded-full animate-breathe opacity-60" style={{ animationDelay: "1s" }}></div>
@@ -839,3 +839,4 @@ const CreateMeditation = () => {
 };
 
 export default CreateMeditation;
+
