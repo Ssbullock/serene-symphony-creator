@@ -38,12 +38,17 @@ const meditationStyles = [
   }
 ];
 
-// Update voice options to map to OpenAI voices
+// Update voice options to include all OpenAI voices
 const voiceOptions = [
-  { id: "alloy", name: "Emma", description: "Warm and soothing female voice", recommended: "mindfulness" },
-  { id: "echo", name: "James", description: "Deep and calming male voice", recommended: "breathwork" },
-  { id: "nova", name: "Lily", description: "Soft and gentle female voice", recommended: "bodyscan" },
-  { id: "onyx", name: "David", description: "Clear and focused male voice", recommended: "visualization" }
+  { id: "alloy", name: "Emma (Alloy)", description: "Warm and soothing female voice", recommended: "mindfulness", previewText: "Hi, I'm Emma. I'm a warm and soothing voice who will be guiding you through your meditation today." },
+  { id: "echo", name: "James (Echo)", description: "Deep and calming male voice", recommended: "breathwork", previewText: "Hi, I'm James. I'm a deep and calming voice who will be guiding you through your meditation today." },
+  { id: "nova", name: "Lily (Nova)", description: "Soft and gentle female voice", recommended: "bodyscan", previewText: "Hi, I'm Lily. I'm a soft and gentle voice who will be guiding you through your meditation today." },
+  { id: "onyx", name: "David (Onyx)", description: "Clear and focused male voice", recommended: "visualization", previewText: "Hi, I'm David. I'm a clear and focused voice who will be guiding you through your meditation today." },
+  { id: "shimmer", name: "Sophie (Shimmer)", description: "Bright and optimistic female voice", recommended: "", previewText: "Hi, I'm Sophie. I'm a bright and optimistic voice who will be guiding you through your meditation today." },
+  { id: "fable", name: "Felix (Fable)", description: "Warm storyteller voice", recommended: "", previewText: "Hi, I'm Felix. I'm a warm storyteller voice who will be guiding you through your meditation today." },
+  { id: "coral", name: "Claire (Coral)", description: "Expressive and engaging female voice", recommended: "", previewText: "Hi, I'm Claire. I'm an expressive and engaging voice who will be guiding you through your meditation today." },
+  { id: "sage", name: "Sam (Sage)", description: "Wise and thoughtful voice", recommended: "", previewText: "Hi, I'm Sam. I'm a wise and thoughtful voice who will be guiding you through your meditation today." },
+  { id: "ash", name: "Alex (Ash)", description: "Neutral and versatile voice", recommended: "", previewText: "Hi, I'm Alex. I'm a neutral and versatile voice who will be guiding you through your meditation today." }
 ];
 
 // Update background options with correct public paths
@@ -85,6 +90,8 @@ const CreateMeditation = () => {
   const [error, setError] = useState("");
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playingVoice, setPlayingVoice] = useState<string | null>(null);
+  const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Get random suggested titles
   const getRandomTitle = () => {
@@ -201,6 +208,88 @@ const CreateMeditation = () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
+      }
+    };
+  }, []);
+
+  // Function to preview voice
+  const handlePreviewVoice = async (voiceId: string) => {
+    // If we're already playing this voice, stop it
+    if (playingVoice === voiceId) {
+      if (voiceAudioRef.current) {
+        voiceAudioRef.current.pause();
+        voiceAudioRef.current.currentTime = 0;
+      }
+      setPlayingVoice(null);
+      return;
+    }
+    
+    // If we're playing a different voice, stop that first
+    if (voiceAudioRef.current) {
+      voiceAudioRef.current.pause();
+      voiceAudioRef.current.currentTime = 0;
+    }
+    
+    setPlayingVoice(voiceId);
+    
+    try {
+      // Find the voice option to get the name
+      const voiceOption = voiceOptions.find(v => v.id === voiceId);
+      if (!voiceOption) {
+        throw new Error("Voice option not found");
+      }
+      
+      // Create safe filename from voice name
+      const safeFileName = voiceOption.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const audioUrl = `http://localhost:3000/voice-previews/${safeFileName}.mp3`;
+      
+      console.log("Playing voice preview from:", audioUrl);
+      
+      // Create and play the audio
+      const audio = new Audio(audioUrl);
+      audio.onended = () => {
+        setPlayingVoice(null);
+      };
+      
+      audio.onerror = (error) => {
+        console.error("Error loading audio:", error);
+        setPlayingVoice(null);
+        toast({
+          title: "Playback Error",
+          description: "Could not load the voice sample. Please try again.",
+          variant: "destructive"
+        });
+      };
+      
+      audio.play().catch(error => {
+        console.error("Error playing voice preview:", error);
+        setPlayingVoice(null);
+        toast({
+          title: "Playback Error",
+          description: "Could not play the voice sample. Please try again.",
+          variant: "destructive"
+        });
+      });
+      
+      voiceAudioRef.current = audio;
+      
+    } catch (error) {
+      console.error("Error playing voice preview:", error);
+      setPlayingVoice(null);
+      toast({
+        title: "Preview Error",
+        description: "Could not play voice preview. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Stop voice audio when component unmounts
+  useEffect(() => {
+    return () => {
+      if (voiceAudioRef.current) {
+        voiceAudioRef.current.pause();
+        voiceAudioRef.current.currentTime = 0;
       }
     };
   }, []);
@@ -399,46 +488,59 @@ const CreateMeditation = () => {
               <h2 className="text-2xl font-semibold mb-6 text-center">Select Voice</h2>
               <p className="text-center text-foreground/70 mb-8">Choose the voice for your guided meditation.</p>
               
-              <div className="max-w-xl mx-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                  {voiceOptions.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-                        voice === item.id 
-                          ? 'border-meditation-calm-blue bg-meditation-light-blue/30' 
-                          : 'border-gray-200 hover:border-meditation-calm-blue/50'
+              <div className="max-w-md mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {voiceOptions.map((option) => (
+                    <div 
+                      key={option.id} 
+                      className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                        voice === option.id 
+                          ? 'border-meditation-calm-blue bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      onClick={() => setVoice(item.id)}
+                      onClick={() => setVoice(option.id)}
                     >
-                      <div className="flex items-start">
-                        <div className={`p-2 rounded-md mr-3 ${
-                          voice === item.id 
-                            ? 'bg-meditation-calm-blue text-white' 
-                            : 'bg-gray-100 text-gray-500'
-                        }`}>
-                          <Mic size={20} />
+                      <div className="flex items-center mb-2">
+                        <div className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg mr-3">
+                          <Mic className="h-5 w-5 text-gray-500" />
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-medium">{item.name}</h3>
-                            {item.recommended === style && (
-                              <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                        <div>
+                          <div className="flex items-center">
+                            <h3 className="font-medium">{option.name}</h3>
+                            {option.recommended === style && option.recommended && (
+                              <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
                                 Recommended
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-foreground/70 mt-1">{item.description}</p>
-                          <button className="text-xs text-meditation-deep-blue mt-2 flex items-center">
-                            <Play size={12} className="mr-1" /> 
-                            Preview voice
-                          </button>
+                          <p className="text-sm text-gray-600">{option.description}</p>
                         </div>
                       </div>
+                      
+                      <button
+                        type="button"
+                        className="text-blue-500 text-sm flex items-center mt-2"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent triggering the parent div's onClick
+                          handlePreviewVoice(option.id);
+                        }}
+                      >
+                        {playingVoice === option.id ? (
+                          <>
+                            <X size={16} className="mr-1" />
+                            Stop preview
+                          </>
+                        ) : (
+                          <>
+                            <Play size={16} className="mr-1" />
+                            Preview voice
+                          </>
+                        )}
+                      </button>
                     </div>
                   ))}
                 </div>
-
+                
                 <div className="mt-8 flex items-center justify-between">
                   <Button variant="ghost" onClick={() => setStep(3)}>
                     Back
