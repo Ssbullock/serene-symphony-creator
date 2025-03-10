@@ -117,6 +117,7 @@ const CreateMeditation = () => {
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
   const isMobile = useIsMobile();
+  const [generatedScript, setGeneratedScript] = useState<string | null>(null);
 
   // Get random suggested titles
   const getRandomTitle = () => {
@@ -319,6 +320,39 @@ const CreateMeditation = () => {
     };
   }, []);
 
+  // Add this function to generate the script
+  const generateMeditationScript = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/generate-script', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          duration,
+          goals,
+          style,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate meditation script');
+      }
+
+      const data = await response.json();
+      console.log("Generated Meditation Script:", data.script);
+      setGeneratedScript(data.script);
+      
+    } catch (error) {
+      console.error('Error generating meditation script:', error);
+      toast({
+        title: "Script Generation Error",
+        description: "Failed to generate meditation script. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-meditation-tranquil">
       {/* Header */}
@@ -466,7 +500,7 @@ const CreateMeditation = () => {
               <h2 className="text-2xl font-semibold mb-6 text-center">Choose Meditation Style</h2>
               <p className="text-center text-foreground/70 mb-8">Select the type of meditation experience you want.</p>
               
-              <div className="max-w-xl mx-auto">
+              <div className="max-w-2xl mx-auto">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                   {meditationStyles.map((item) => (
                     <div
@@ -499,7 +533,15 @@ const CreateMeditation = () => {
                   <Button variant="ghost" onClick={() => setStep(2)}>
                     Back
                   </Button>
-                  <Button onClick={() => setStep(4)} className="btn-primary">
+                  <Button 
+                    onClick={async () => {
+                      if (style) {
+                        await generateMeditationScript();
+                        setStep(4);
+                      }
+                    }} 
+                    className="btn-primary"
+                  >
                     Continue
                   </Button>
                 </div>
