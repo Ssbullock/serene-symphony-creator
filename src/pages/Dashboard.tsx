@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Play, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info } from "lucide-react";
+import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,75 +8,297 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/lib/supabase";
+import { useUser } from "@/hooks/use-user";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { formatDistanceToNow } from "date-fns";
 
-const savedMeditations = [
-  {
-    id: 1,
-    title: "Morning Mindfulness",
-    duration: "10 minutes",
-    style: "Mindfulness",
-    created: "2 days ago",
-    thumbnail: "meditation-calm-blue"
-  },
-  {
-    id: 2,
-    title: "Deep Sleep Relaxation",
-    duration: "20 minutes",
-    style: "Body Scan",
-    created: "1 week ago",
-    thumbnail: "meditation-deep-blue"
-  },
-  {
-    id: 3,
-    title: "Anxiety Relief",
-    duration: "15 minutes",
-    style: "Breathwork",
-    created: "3 days ago",
-    thumbnail: "meditation-soft-blue"
-  },
-  {
-    id: 4,
-    title: "Focus & Clarity",
-    duration: "8 minutes",
-    style: "Visualization",
-    created: "Yesterday",
-    thumbnail: "meditation-light-blue"
-  }
-];
+// Define the Meditation type
+interface Meditation {
+  id: string;
+  title: string;
+  duration: number;
+  style: string;
+  audio_url: string;
+  created_at: string;
+  background: string;
+  voice: string;
+}
 
 const Dashboard = () => {
+  const [meditations, setMeditations] = useState<Meditation[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+
+  useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   const firstName = user?.user_metadata?.name?.split(' ')[0] || 'there';
 
-  const filteredMeditations = savedMeditations.filter(meditation => 
-    meditation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    meditation.style.toLowerCase().includes(searchQuery.toLowerCase())
+  // Fetch meditations from Supabase
+  useEffect(() => {
+    const fetchMeditations = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('meditations')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        setMeditations(data || []);
+      } catch (error) {
+        console.error('Error fetching meditations:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load your meditations",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchMeditations();
+  }, [user]);
+
+  // Filter meditations based on search query
+  const filteredMeditations = meditations.filter(meditation => 
+    meditation.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleDelete = (id: number) => {
-    toast({
-      title: "Meditation deleted",
-      description: "The meditation has been removed from your library."
+  // Add this helper function to load audio
+  const loadAudio = async (url: string): Promise<HTMLAudioElement> => {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio(url);
+      
+      const onCanPlay = () => {
+        audio.removeEventListener('canplaythrough', onCanPlay);
+        audio.removeEventListener('error', onError);
+        resolve(audio);
+      };
+      
+      const onError = (e: Event) => {
+        audio.removeEventListener('canplaythrough', onCanPlay);
+        audio.removeEventListener('error', onError);
+        reject(new Error(`Failed to load audio: ${(e as ErrorEvent).message}`));
+      };
+      
+      audio.addEventListener('canplaythrough', onCanPlay);
+      audio.addEventListener('error', onError);
+      
+      // Set a timeout in case the audio never loads
+      const timeout = setTimeout(() => {
+        audio.removeEventListener('canplaythrough', onCanPlay);
+        audio.removeEventListener('error', onError);
+        reject(new Error('Audio loading timed out'));
+      }, 10000);
+      
+      audio.load();
+      
+      // Clear the timeout if we resolve or reject
+      audio.addEventListener('canplaythrough', () => clearTimeout(timeout));
+      audio.addEventListener('error', () => clearTimeout(timeout));
     });
   };
 
-  const handlePlay = (id: number) => {
-    toast({
-      title: "Now playing",
-      description: "Your meditation is starting..."
-    });
+  // Update the handlePlayPause function
+  const handlePlayPause = async (id: string, audioUrl: string) => {
+    if (playingId === id) {
+      // Already playing this meditation, pause it
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setPlayingId(null);
+      }
+    } else {
+      // Stop current audio if playing
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      
+      try {
+        // Try the version with background music first
+        const baseUrl = audioUrl;
+        const withBgUrl = baseUrl.includes('_with_bg.mp3') 
+          ? baseUrl 
+          : baseUrl.replace('.mp3', '_with_bg.mp3');
+        
+        try {
+          // First try with background
+          const audio = await loadAudio(`http://localhost:3000${withBgUrl}`);
+          
+          audio.addEventListener('ended', () => {
+            setPlayingId(null);
+          });
+          
+          audioRef.current = audio;
+          await audio.play();
+          setPlayingId(id);
+          
+        } catch (bgError) {
+          console.error("Error playing audio with background, trying original:", bgError);
+          
+          // Try the original version
+          const audio = await loadAudio(`http://localhost:3000${baseUrl}`);
+          
+          audio.addEventListener('ended', () => {
+            setPlayingId(null);
+          });
+          
+          audioRef.current = audio;
+          await audio.play();
+          setPlayingId(id);
+        }
+      } catch (error) {
+        console.error("Error playing audio:", error);
+        toast({
+          title: "Playback Error",
+          description: "Failed to play meditation audio",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
-  const handleDownload = (id: number) => {
-    toast({
-      title: "Download started",
-      description: "Your meditation is being downloaded."
-    });
+  // Update the handleDownload function
+  const handleDownload = async (meditation: Meditation) => {
+    try {
+      setLoading(true);
+      
+      // Always try to download the version with background music first
+      const baseUrl = meditation.audio_url;
+      const withBgUrl = baseUrl.includes('_with_bg.mp3') 
+        ? baseUrl 
+        : baseUrl.replace('.mp3', '_with_bg.mp3');
+      
+      // Create a temporary anchor element for download
+      const downloadFile = async (url: string, fallbackUrl?: string) => {
+        try {
+          // First check if the file exists
+          const checkResponse = await fetch(`http://localhost:3000${url}`, { method: 'HEAD' });
+          
+          if (checkResponse.ok) {
+            // File exists, create download link
+            const link = document.createElement('a');
+            link.href = `http://localhost:3000${url}`;
+            link.download = `${meditation.title || 'Meditation'}.mp3`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            return true;
+          } else if (fallbackUrl) {
+            // Try fallback URL
+            console.log(`File not found at ${url}, trying fallback...`);
+            return downloadFile(fallbackUrl);
+          }
+          return false;
+        } catch (error) {
+          console.error(`Error downloading from ${url}:`, error);
+          if (fallbackUrl) {
+            console.log('Trying fallback URL...');
+            return downloadFile(fallbackUrl);
+          }
+          return false;
+        }
+      };
+      
+      // Try with background version first, then fallback to original
+      const downloaded = await downloadFile(withBgUrl, baseUrl);
+      
+      if (downloaded) {
+        toast({
+          title: "Download Started",
+          description: "Your meditation is being downloaded",
+          variant: "default"
+        });
+      } else {
+        throw new Error("Could not download meditation file");
+      }
+    } catch (error) {
+      console.error('Error downloading meditation:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download meditation. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update the handleDelete function
+  const handleDelete = async (meditationId: string) => {
+    try {
+      setLoading(true);
+      
+      // First delete from Supabase
+      const { error: supabaseError } = await supabase
+        .from('meditations')
+        .delete()
+        .eq('id', meditationId);
+      
+      if (supabaseError) {
+        console.error('Error deleting from Supabase:', supabaseError);
+        throw new Error('Failed to delete meditation from database');
+      }
+      
+      // Then delete the files
+      const response = await fetch('http://localhost:3000/api/delete-meditation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          meditationId
+        }),
+      });
+      
+      if (!response.ok) {
+        console.warn(`Delete files request failed with status ${response.status}`);
+        // Continue anyway since we deleted from the database
+      }
+      
+      // Remove from local state
+      setMeditations(meditations.filter(m => m.id !== meditationId));
+      
+      toast({
+        title: "Meditation Deleted",
+        description: "Your meditation has been permanently deleted.",
+        variant: "default"
+      });
+      
+    } catch (error) {
+      console.error('Error deleting meditation:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete meditation. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Format creation date
+  const formatCreationDate = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (e) {
+      return "Recently";
+    }
   };
 
   const handleLogout = async () => {
@@ -95,14 +317,10 @@ const Dashboard = () => {
     }
   };
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
   return (
     <div className="min-h-screen flex bg-meditation-tranquil">
       <button 
-        onClick={toggleSidebar} 
+        onClick={() => isMobile && setSidebarOpen(false)}
         className="md:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-md shadow-md"
         aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
       >
@@ -235,57 +453,113 @@ const Dashboard = () => {
               </TooltipProvider>
             </div>
             
-            {filteredMeditations.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-foreground/70 mb-4">No meditations found.</p>
-                <Link to="/create" className="btn-primary">
-                  Create Your First Meditation
-                </Link>
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-gray-100 animate-pulse rounded-lg h-48"></div>
+                ))}
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            ) : filteredMeditations.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredMeditations.map((meditation) => (
-                  <Card key={meditation.id} className="overflow-hidden transition-all duration-300 hover:shadow-md hover:scale-102">
-                    <div className={`h-3 bg-${meditation.thumbnail}`}></div>
-                    <CardContent className="p-4 sm:p-5">
-                      <h3 className="font-semibold text-lg mb-2">{meditation.title}</h3>
-                      <div className="flex flex-wrap items-center text-sm text-foreground/70 mb-4">
-                        <span className="mr-3">{meditation.duration}</span>
-                        <span className="mr-3">•</span>
+                  <div 
+                    key={meditation.id} 
+                    className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
+                  >
+                    <div className={`h-2 ${
+                      meditation.style === 'mindfulness' ? 'bg-blue-400' :
+                      meditation.style === 'breathwork' ? 'bg-green-400' :
+                      meditation.style === 'bodyscan' ? 'bg-purple-400' :
+                      meditation.style === 'visualization' ? 'bg-yellow-400' :
+                      'bg-gray-400'
+                    }`}></div>
+                    <div className="p-5">
+                      <h3 className="font-semibold text-lg mb-1">{meditation.title}</h3>
+                      <div className="flex items-center text-sm text-foreground/70 mb-3">
+                        <span>{meditation.duration} minutes</span>
+                        <span className="mx-2">•</span>
                         <span>{meditation.style}</span>
                       </div>
-                      <div className="text-xs text-foreground/60 mb-4">
-                        Created {meditation.created}
-                      </div>
-                      <div className="flex flex-wrap gap-2">
+                      <p className="text-xs text-foreground/50 mb-4">
+                        Created {formatCreationDate(meditation.created_at)}
+                      </p>
+                      
+                      <div className="flex items-center justify-between">
                         <Button 
-                          size="sm" 
-                          className="bg-meditation-calm-blue hover:bg-meditation-calm-blue/90 text-white"
-                          onClick={() => handlePlay(meditation.id)}
-                        >
-                          <Play size={16} className="mr-1" />
-                          Play
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleDownload(meditation.id)}
-                        >
-                          <Download size={16} className="mr-1" />
-                          Save
-                        </Button>
-                        <Button 
-                          size="sm" 
                           variant="outline" 
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200"
-                          onClick={() => handleDelete(meditation.id)}
+                          size="sm"
+                          onClick={() => handlePlayPause(meditation.id, meditation.audio_url)}
+                          className="flex items-center"
                         >
-                          <Trash size={16} />
+                          {playingId === meditation.id ? (
+                            <>
+                              <Pause size={16} className="mr-1" />
+                              Pause
+                            </>
+                          ) : (
+                            <>
+                              <Play size={16} className="mr-1" />
+                              Play
+                            </>
+                          )}
                         </Button>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleDownload(meditation)}
+                          >
+                            <Download size={16} />
+                          </Button>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Trash size={16} className="text-red-500" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Meditation</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{meditation.title}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDelete(meditation.id)}
+                                  className="bg-red-500 hover:bg-red-600"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <div className="mx-auto w-16 h-16 bg-meditation-light-blue rounded-full flex items-center justify-center mb-4">
+                  <Info size={24} className="text-meditation-deep-blue" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">No meditations found</h3>
+                <p className="text-foreground/70 mb-6">
+                  {searchQuery ? 
+                    "No meditations match your search query." : 
+                    "You haven't created any meditations yet."}
+                </p>
+                <Link to="/create">
+                  <Button>
+                    <Plus size={18} className="mr-2" />
+                    Create Your First Meditation
+                  </Button>
+                </Link>
               </div>
             )}
           </section>

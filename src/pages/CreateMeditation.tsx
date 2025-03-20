@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, RefreshCw, Clock, CheckCircle, Mic, Music, Play, Save, Download, X, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, RefreshCw, Clock, CheckCircle, Mic, Music, Play, Save, Download, X, Info, ChevronLeft, ChevronRight, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,9 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { supabase } from "@/lib/supabase";
+import { useUser } from "@/hooks/use-user";
+import { saveAs } from 'file-saver';
 
 // Mock data for meditation options
 const meditationStyles = [
@@ -98,6 +101,41 @@ const getBackgroundName = (backgroundId: string) => {
   return background ? background.name : "No Background";
 };
 
+// Update the formatDuration function to convert seconds to minutes:minutes format
+const formatDuration = (seconds: number) => {
+  if (isNaN(seconds)) return "0:00";
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
+
+// Add a function to format minutes for display in the header
+const formatMinutesForDisplay = (minutes: number | string) => {
+  if (typeof minutes === 'string') {
+    // Try to parse the string as a number
+    const parsedMinutes = parseFloat(minutes);
+    if (isNaN(parsedMinutes)) return minutes; // Return as is if not a valid number
+    minutes = parsedMinutes;
+  }
+  
+  // Round to 1 decimal place if it's not a whole number
+  return Number.isInteger(minutes) ? minutes.toString() : minutes.toFixed(1);
+};
+
+// First, fix the type for generatedMeditation
+interface GeneratedMeditation {
+  id: string;
+  title: string;
+  duration: number;
+  audio_url: string;
+  style: string;
+  voice: string;
+  background: string;
+  goals?: string;
+}
+
 const CreateMeditation = () => {
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
@@ -110,7 +148,7 @@ const CreateMeditation = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [goals, setGoals] = useState("");
-  const [generatedMeditation, setGeneratedMeditation] = useState(null);
+  const [generatedMeditation, setGeneratedMeditation] = useState<GeneratedMeditation | null>(null);
   const [error, setError] = useState("");
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -118,6 +156,12 @@ const CreateMeditation = () => {
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
   const isMobile = useIsMobile();
   const [generatedScript, setGeneratedScript] = useState<string | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState("");
+  const { user, loading: userLoading } = useUser();
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isAudioReady, setIsAudioReady] = useState(false);
 
   // Get random suggested titles
   const getRandomTitle = () => {
@@ -125,62 +169,337 @@ const CreateMeditation = () => {
     setTitle(randomTitle);
   };
 
-  // Handle generate meditation
+  // Update the useEffect for safety timeout
+  useEffect(() => {
+    let timeoutId: number;
+    
+    if (isGenerating) {
+      // Set a safety timeout to clear the loading state if it gets stuck
+      // Use a longer timeout for longer meditations
+      const timeoutDuration = parseInt(duration) >= 20 ? 180000 : 90000; // 3 minutes for long meditations, 1.5 minutes for shorter ones
+      
+      timeoutId = window.setTimeout(() => {
+        if (isGenerating) {
+          console.log(`Safety timeout triggered after ${timeoutDuration/60000} minutes - clearing loading state`);
+          setIsGenerating(false);
+          setLoadingMessage("");
+          
+          // If we have a session ID but no generated meditation, create one
+          if (sessionId && !generatedMeditation) {
+            const defaultMeditation = {
+              id: sessionId,
+              title: title || `${getStyleName(style)} Meditation`,
+              duration: parseInt(duration),
+              style: style,
+              voice: voice,
+              background: background,
+              audio_url: `/meditations/${sessionId}.mp3`,
+              goals: goals
+            };
+            
+            setGeneratedMeditation(defaultMeditation);
+            setStep(7);
+            
+            toast({
+              title: "Meditation Ready",
+              description: "Your meditation has been created and is ready to play.",
+              variant: "default"
+            });
+          }
+        }
+      }, timeoutDuration);
+    }
+    
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [isGenerating, generatedMeditation, sessionId, duration]);
+
+  // Update the handleCreateMeditation function
   const handleCreateMeditation = async () => {
     setIsGenerating(true);
+    setError('');
     
     try {
-      // Prepare the data for the API
-      const meditationData = {
-        title: title || `${getStyleName(style)} Meditation`,
-        duration: duration,
-        goals: goals,
-        style: style,
-        voice: voice,
-        backgroundMusic: background !== "none" ? `/music/${background}.mp3` : null
-      };
+      // Generate a session ID if we don't have one
+      const newSessionId = sessionId || crypto.randomUUID();
+      setSessionId(newSessionId);
+      console.log("Using session ID:", newSessionId);
       
-      // Call the generate-meditation endpoint
-      const response = await fetch('/api/generate-meditation', {
+      // Step 1: Generate the meditation script
+      setLoadingMessage("Generating meditation script...");
+      const scriptResponse = await fetch('http://localhost:3000/api/generate-script', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(meditationData),
+        body: JSON.stringify({
+          style,
+          duration,
+          goals
+        }),
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate meditation');
+      if (!scriptResponse.ok) {
+        throw new Error(`Script generation failed with status ${scriptResponse.status}`);
       }
       
-      const data = await response.json();
+      const scriptData = await scriptResponse.json();
+      setGeneratedScript(scriptData.script);
       
-      // Update the meditation data with the response
-      setGeneratedMeditation({
-        id: data.id,
-        title: data.title,
-        audioUrl: data.audioUrl,
-        duration: data.duration
+      // Step 2: Generate TTS audio files
+      setLoadingMessage("Generating voice audio...");
+      const ttsResponse = await fetch('http://localhost:3000/api/generate-tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          script: scriptData.script,
+          voice,
+          sessionId: newSessionId
+        }),
       });
       
+      if (!ttsResponse.ok) {
+        throw new Error(`TTS generation failed with status ${ttsResponse.status}`);
+      }
+      
+      const ttsData = await ttsResponse.json();
+      console.log("TTS response:", ttsData);
+      
+      // Step 3: Process the audio files
+      setLoadingMessage("Processing audio and adding background music...");
+      const processResponse = await fetch('http://localhost:3000/api/process-audio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId: newSessionId,
+          audioFiles: ttsData.audioFiles,
+          background: background === 'none' ? null : background
+        }),
+      });
+      
+      if (!processResponse.ok) {
+        throw new Error(`Process audio request failed with status ${processResponse.status}`);
+      }
+      
+      const processedData = await processResponse.json();
+      console.log("Process audio response:", processedData);
+      
+      // Check if processing was successful
+      if (processedData.status === 'error') {
+        throw new Error(processedData.error || "Failed to process audio");
+      }
+      
+      // Set the generated meditation with the correct audio URL
+      setGeneratedMeditation({
+        id: newSessionId,
+        title: title || `${getStyleName(style)} Meditation`,
+        duration: parseInt(duration),
+        audio_url: processedData.audioUrl,
+        style,
+        voice,
+        background,
+        goals
+      });
+      
+      // Move to the final step only after successful processing
+      setStep(7);
       setIsGenerating(false);
-      setStep(7); // Move to success screen
       
     } catch (error) {
-      console.error('Error generating meditation:', error);
+      console.error("Error creating meditation:", error);
       setIsGenerating(false);
-      setError('Failed to generate your meditation. Please try again.');
+      setError(error.message || "Failed to create meditation");
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate meditation",
+        variant: "destructive"
+      });
     }
   };
 
-  // Handle saving meditation
-  const handleSave = () => {
-    toast({
-      title: "Meditation saved",
-      description: "Your meditation has been added to your library."
+  // Simple function to play audio with proper error handling
+  const playAudio = async (url) => {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio(url);
+      
+      const onCanPlay = () => {
+        audio.removeEventListener('canplaythrough', onCanPlay);
+        audio.removeEventListener('error', onError);
+        resolve(audio);
+      };
+      
+      const onError = (e) => {
+        audio.removeEventListener('canplaythrough', onCanPlay);
+        audio.removeEventListener('error', onError);
+        reject(new Error(`Failed to load audio: ${e.message}`));
+      };
+      
+      audio.addEventListener('canplaythrough', onCanPlay);
+      audio.addEventListener('error', onError);
+      audio.load();
     });
-    navigate("/dashboard");
+  };
+
+  // Update the handlePlayPause function
+  const handlePlayPause = async () => {
+    if (!generatedMeditation?.audio_url) return;
+    
+    if (isPlaying) {
+      // Pause the audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    } else {
+      // Play the audio
+      try {
+        setLoadingMessage("Loading audio...");
+        
+        // Get the full URL
+        const audioUrl = `http://localhost:3000${generatedMeditation.audio_url}`;
+        console.log("Playing audio from:", audioUrl);
+        
+        // Create and load the audio
+        const audio = await playAudio(audioUrl);
+        
+        // Set up event listeners
+        audio.addEventListener('timeupdate', () => {
+          if (audio.duration) {
+            setProgress((audio.currentTime / audio.duration) * 100);
+          }
+        });
+        
+        audio.addEventListener('ended', () => {
+          setIsPlaying(false);
+          setProgress(0);
+        });
+        
+        // Play the audio
+        audioRef.current = audio;
+        await audio.play();
+        setIsPlaying(true);
+        setLoadingMessage("");
+        
+      } catch (error) {
+        console.error("Error playing audio:", error);
+        setLoadingMessage("");
+        toast({
+          title: "Playback Error",
+          description: "Failed to play meditation audio. Please try downloading instead.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  // Update the handleSave function to ensure it works properly
+  const handleSave = async () => {
+    if (!generatedMeditation) return;
+    
+    try {
+      setLoadingMessage("Saving meditation...");
+      
+      // Check if the meditation is already saved
+      const { data: existingMeditation } = await supabase
+        .from('meditations')
+        .select('id')
+        .eq('id', generatedMeditation.id)
+        .single();
+      
+      if (existingMeditation) {
+        // Already saved, just navigate to dashboard
+        navigate("/dashboard");
+        return;
+      }
+      
+      // Save the meditation to Supabase
+      const { error } = await supabase
+        .from('meditations')
+        .insert({
+          id: generatedMeditation.id,
+          title: title || `${getStyleName(style)} Meditation`,
+          duration: parseInt(duration),
+          style: style,
+          voice: voice,
+          background: background,
+          goals: goals,
+          audio_url: generatedMeditation.audio_url,
+          user_id: user.id
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Success",
+        description: "Meditation saved to your dashboard",
+        variant: "default"
+      });
+      
+      navigate("/dashboard");
+      
+    } catch (error) {
+      console.error("Error saving meditation:", error);
+      setLoadingMessage("");
+      toast({
+        title: "Save Error",
+        description: "Failed to save your meditation. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Update the handleDownload function
+  const handleDownload = async () => {
+    if (!generatedMeditation?.audio_url) return;
+    
+    try {
+      setLoadingMessage("Preparing download...");
+      
+      // Try to download the version with background music first
+      const baseUrl = generatedMeditation.audio_url;
+      const withBgUrl = baseUrl.includes('_with_bg.mp3') 
+        ? baseUrl 
+        : baseUrl.replace('.mp3', '_with_bg.mp3');
+      
+      // Create a safe filename
+      const filename = `${title || getStyleName(style)}_meditation.mp3`.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      
+      // Create a temporary anchor element to trigger download
+      const a = document.createElement('a');
+      a.href = `http://localhost:3000${withBgUrl}`;
+      a.download = filename;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      
+      // Small delay before removing the element
+      setTimeout(() => {
+        document.body.removeChild(a);
+        setLoadingMessage("");
+      }, 500);
+      
+      toast({
+        title: "Download Started",
+        description: "Your meditation is being downloaded.",
+        variant: "default"
+      });
+      
+    } catch (error) {
+      console.error('Error downloading meditation:', error);
+      setLoadingMessage("");
+      toast({
+        title: "Download Failed",
+        description: "Failed to download your meditation. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Function to preview background audio
@@ -259,19 +578,17 @@ const CreateMeditation = () => {
     setPlayingVoice(voiceId);
     
     try {
-      // Find the voice option to get the name
       const voiceOption = voiceOptions.find(v => v.id === voiceId);
       if (!voiceOption) {
         throw new Error("Voice option not found");
       }
       
-      // Create safe filename from voice name
-      const safeFileName = voiceOption.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const audioUrl = `http://localhost:3000/voice-previews/${safeFileName}.mp3`;
+      // Create safe filename matching the existing files (double hyphens)
+      const safeFileName = `${voiceOption.name.toLowerCase()}--${voiceId}-.mp3`;
+      const audioUrl = `/voice-previews/${safeFileName}`;
       
       console.log("Playing voice preview from:", audioUrl);
       
-      // Create and play the audio
       const audio = new Audio(audioUrl);
       audio.onended = () => {
         setPlayingVoice(null);
@@ -320,38 +637,155 @@ const CreateMeditation = () => {
     };
   }, []);
 
-  // Add this function to generate the script
-  const generateMeditationScript = async () => {
+  // Add a discard function
+  const handleDiscard = async () => {
+    if (!generatedMeditation?.id) return;
+    
     try {
-      const response = await fetch('http://localhost:3000/api/generate-script', {
+      setLoadingMessage("Discarding meditation...");
+      
+      // Call the delete API
+      const response = await fetch('http://localhost:3000/api/delete-meditation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          duration,
-          goals,
-          style,
+          meditationId: generatedMeditation.id,
+          // Don't pass userId since it's not saved to Supabase yet
         }),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate meditation script');
-      }
-
-      const data = await response.json();
-      console.log("Generated Meditation Script:", data.script);
-      setGeneratedScript(data.script);
       
+      if (!response.ok) {
+        throw new Error(`Discard request failed with status ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Meditation Discarded",
+          description: "Your meditation has been discarded.",
+          variant: "default"
+        });
+        
+        // Navigate back to dashboard
+        navigate("/dashboard");
+      } else {
+        throw new Error(result.error || "Failed to discard meditation");
+      }
     } catch (error) {
-      console.error('Error generating meditation script:', error);
+      console.error('Error discarding meditation:', error);
       toast({
-        title: "Script Generation Error",
-        description: "Failed to generate meditation script. Please try again.",
+        title: "Error",
+        description: "Failed to discard meditation, but you can still navigate away.",
         variant: "destructive"
       });
+      
+      // Navigate anyway
+      navigate("/dashboard");
+    } finally {
+      setLoadingMessage("");
     }
   };
+
+  // Update the handleProgressClick function to work when paused
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!audioRef.current || !isAudioReady) return;
+    
+    const audio = audioRef.current as HTMLAudioElement;
+    const progressBar = e.currentTarget;
+    const rect = progressBar.getBoundingClientRect();
+    const clickPosition = e.clientX - rect.left;
+    const percentageClicked = (clickPosition / rect.width) * 100;
+    
+    // Update the progress visually
+    setProgress(percentageClicked);
+    
+    // Update the audio position
+    if (audio.duration) {
+      audio.currentTime = (percentageClicked / 100) * audio.duration;
+    }
+  };
+
+  // Add this function to pause audio when navigating away
+  useEffect(() => {
+    return () => {
+      // Cleanup function that runs when component unmounts
+      if (audioRef.current) {
+        const audio = audioRef.current as HTMLAudioElement;
+        audio.pause();
+      }
+      
+      // Also pause any preview audio that might be playing
+      const previewAudio = document.querySelectorAll('audio');
+      previewAudio.forEach(audio => audio.pause());
+    };
+  }, []);
+
+  // Update the useEffect for audio initialization to load immediately
+  useEffect(() => {
+    if (generatedMeditation && step === 7) {
+      initializeAudio();
+    }
+  }, [generatedMeditation, step]);
+
+  // Update the initializeAudio function to properly set duration in minutes
+  const initializeAudio = async () => {
+    if (!generatedMeditation) return;
+    
+    try {
+      // Create audio element
+      const audio = new Audio(`http://localhost:3000${generatedMeditation.audio_url}`);
+      
+      // Set up event listeners
+      audio.addEventListener('timeupdate', () => {
+        if (audio.duration) {
+          setProgress((audio.currentTime / audio.duration) * 100);
+        }
+      });
+      
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setProgress(0);
+      });
+      
+      audio.addEventListener('loadedmetadata', () => {
+        // Once metadata is loaded, update the duration display
+        // No need to convert to minutes here as formatDuration will handle it
+        setIsAudioReady(true);
+      });
+      
+      // Load the audio
+      audioRef.current = audio;
+      
+      // Don't auto-play, just prepare the audio
+      setLoadingMessage("");
+    } catch (error) {
+      console.error('Error initializing audio:', error);
+      setError('Failed to load meditation audio');
+    }
+  };
+
+  // Add loading handling
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-meditation-calm-blue"></div>
+      </div>
+    );
+  }
+
+  // Optional: Handle not authenticated state
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <h1 className="text-2xl font-semibold mb-4">Please Sign In</h1>
+        <p className="text-foreground/70 mb-4">You need to be signed in to create meditations.</p>
+        <Button onClick={() => navigate('/login')}>Sign In</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-meditation-tranquil">
@@ -534,12 +968,7 @@ const CreateMeditation = () => {
                     Back
                   </Button>
                   <Button 
-                    onClick={async () => {
-                      if (style) {
-                        await generateMeditationScript();
-                        setStep(4);
-                      }
-                    }} 
+                    onClick={() => style && setStep(4)}
                     className="btn-primary"
                   >
                     Continue
@@ -782,10 +1211,10 @@ const CreateMeditation = () => {
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Creating Your Meditation</h3>
                 <p className="text-foreground/70 mb-4">
-                  We're crafting your perfect {duration}-minute {getStyleName(style)} meditation...
+                  {loadingMessage || `We're crafting your perfect ${formatMinutesForDisplay(duration)}-minute ${getStyleName(style)} meditation...`}
                 </p>
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-meditation-calm-blue animate-pulse-soft" style={{ width: '60%' }}></div>
+                  <div className="h-full bg-meditation-calm-blue animate-loading-bar" style={{ width: '100%' }}></div>
                 </div>
               </div>
             </div>
@@ -800,7 +1229,7 @@ const CreateMeditation = () => {
                 </div>
                 <h2 className="text-2xl font-semibold mb-2">Your Meditation is Ready!</h2>
                 <p className="text-foreground/70">
-                  Your {duration}-minute {getStyleName(style)} meditation has been created.
+                  Your {formatMinutesForDisplay(duration)}-minute {getStyleName(style)} meditation has been created.
                 </p>
               </div>
 
@@ -809,25 +1238,52 @@ const CreateMeditation = () => {
                   <h3 className="font-semibold text-lg">
                     {title || `${getStyleName(style)} Meditation`}
                   </h3>
-                  <span className="text-sm text-foreground/70">{duration} min</span>
+                  <span className="text-sm text-foreground/70">
+                    {formatMinutesForDisplay(duration)} min
+                  </span>
                 </div>
 
-                <div className="bg-white rounded-lg p-3 mb-4 flex items-center gap-3">
-                  <div className="h-10 w-10 bg-meditation-calm-blue rounded-full flex items-center justify-center">
-                    <Play className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="h-1.5 bg-gray-100 rounded-full">
-                      <div className="h-full w-0 bg-meditation-calm-blue rounded-full"></div>
+                <div className="mt-4 max-w-md mx-auto">
+                  {/* Player controls with repositioned play button */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <Button
+                      className="rounded-full w-8 h-8 flex items-center justify-center p-0"
+                      onClick={handlePlayPause}
+                      disabled={!isAudioReady}
+                      variant="outline"
+                    >
+                      {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                    </Button>
+                    
+                    <div className="flex-1 flex items-center justify-between">
+                      <span className="text-sm text-foreground/70">
+                        {formatDuration(audioRef.current?.currentTime || 0)}
+                      </span>
+                      <span className="text-sm text-foreground/70">
+                        {formatDuration(audioRef.current?.duration || 0)}
+                      </span>
                     </div>
-                    <div className="flex justify-between mt-1">
-                      <span className="text-xs text-foreground/70">0:00</span>
-                      <span className="text-xs text-foreground/70">{duration}:00</span>
+                  </div>
+                  
+                  {/* Scrubbing timeline with indicator */}
+                  <div 
+                    className="h-2 bg-gray-200 rounded-full overflow-hidden cursor-pointer relative group"
+                    onClick={handleProgressClick}
+                  >
+                    <div 
+                      className="h-full bg-meditation-calm-blue transition-all duration-300" 
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                    
+                    {/* Scrubbing indicator dot that appears on hover */}
+                    <div className="absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                         style={{ left: `${progress}%` }}>
+                      <div className="w-3 h-3 bg-white border-2 border-meditation-calm-blue rounded-full -ml-1.5"></div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 text-sm">
+                <div className="flex flex-wrap gap-2 text-sm mt-4">
                   <span className="bg-white px-2 py-1 rounded-full">{getStyleName(style)}</span>
                   <span className="bg-white px-2 py-1 rounded-full">{getVoiceName(voice)}</span>
                   <span className="bg-white px-2 py-1 rounded-full">{getBackgroundName(background)}</span>
@@ -839,20 +1295,20 @@ const CreateMeditation = () => {
                   <Save size={18} className="mr-2" />
                   Save to My Meditations
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" onClick={handleDownload}>
                   <Download size={18} className="mr-2" />
                   Download
                 </Button>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="outline" onClick={() => navigate("/dashboard")}>
+                      <Button variant="outline" onClick={handleDiscard}>
                         <X size={18} className="mr-2" />
                         Discard
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Your meditation will not be saved</p>
+                      <p>Your meditation will be permanently deleted</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
