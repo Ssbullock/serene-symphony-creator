@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, RefreshCw, Clock, CheckCircle, Mic, Music, Play, Save, Download, X, Info, ChevronLeft, ChevronRight, Pause } from "lucide-react";
@@ -153,6 +154,8 @@ const CreateMeditation = () => {
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
+  // Add the missing audioRef declaration
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const isMobile = useIsMobile();
   const [generatedScript, setGeneratedScript] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState("");
