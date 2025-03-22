@@ -12,41 +12,38 @@ export type Database = {
       meditations: {
         Row: {
           audio_url: string
-          background_music: string | null
-          created_at: string | null
+          background: string | null
+          created_at: string
           duration: number
-          goals: string
+          goals: string | null
           id: string
-          script: string
           style: string
           title: string
-          user_id: string | null
+          user_id: string
           voice: string
         }
         Insert: {
           audio_url: string
-          background_music?: string | null
-          created_at?: string | null
+          background?: string | null
+          created_at?: string
           duration: number
-          goals: string
-          id?: string
-          script: string
+          goals?: string | null
+          id: string
           style: string
           title: string
-          user_id?: string | null
+          user_id: string
           voice: string
         }
         Update: {
           audio_url?: string
-          background_music?: string | null
-          created_at?: string | null
+          background?: string | null
+          created_at?: string
           duration?: number
-          goals?: string
+          goals?: string | null
           id?: string
-          script?: string
           style?: string
           title?: string
-          user_id?: string | null
+          user_id?: string
           voice?: string
         }
         Relationships: []

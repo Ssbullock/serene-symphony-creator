@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info } from "lucide-react";
+import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import { useUser } from "@/hooks/use-user";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
 
-// Define the Meditation type
 interface Meditation {
   id: string;
   title: string;
@@ -42,7 +41,6 @@ const Dashboard = () => {
 
   const firstName = user?.user_metadata?.name?.split(' ')[0] || 'there';
 
-  // Fetch meditations from Supabase
   useEffect(() => {
     const fetchMeditations = async () => {
       if (!user) return;
@@ -75,12 +73,10 @@ const Dashboard = () => {
     fetchMeditations();
   }, [user]);
 
-  // Filter meditations based on search query
   const filteredMeditations = meditations.filter(meditation => 
     meditation.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Add this helper function to load audio
   const loadAudio = async (url: string): Promise<HTMLAudioElement> => {
     return new Promise((resolve, reject) => {
       const audio = new Audio(url);
@@ -100,7 +96,6 @@ const Dashboard = () => {
       audio.addEventListener('canplaythrough', onCanPlay);
       audio.addEventListener('error', onError);
       
-      // Set a timeout in case the audio never loads
       const timeout = setTimeout(() => {
         audio.removeEventListener('canplaythrough', onCanPlay);
         audio.removeEventListener('error', onError);
@@ -109,35 +104,29 @@ const Dashboard = () => {
       
       audio.load();
       
-      // Clear the timeout if we resolve or reject
       audio.addEventListener('canplaythrough', () => clearTimeout(timeout));
       audio.addEventListener('error', () => clearTimeout(timeout));
     });
   };
 
-  // Update the handlePlayPause function
   const handlePlayPause = async (id: string, audioUrl: string) => {
     if (playingId === id) {
-      // Already playing this meditation, pause it
       if (audioRef.current) {
         audioRef.current.pause();
         setPlayingId(null);
       }
     } else {
-      // Stop current audio if playing
       if (audioRef.current) {
         audioRef.current.pause();
       }
       
       try {
-        // Try the version with background music first
         const baseUrl = audioUrl;
         const withBgUrl = baseUrl.includes('_with_bg.mp3') 
           ? baseUrl 
           : baseUrl.replace('.mp3', '_with_bg.mp3');
         
         try {
-          // First try with background
           const audio = await loadAudio(`http://localhost:3000${withBgUrl}`);
           
           audio.addEventListener('ended', () => {
@@ -151,7 +140,6 @@ const Dashboard = () => {
         } catch (bgError) {
           console.error("Error playing audio with background, trying original:", bgError);
           
-          // Try the original version
           const audio = await loadAudio(`http://localhost:3000${baseUrl}`);
           
           audio.addEventListener('ended', () => {
@@ -173,25 +161,20 @@ const Dashboard = () => {
     }
   };
 
-  // Update the handleDownload function
   const handleDownload = async (meditation: Meditation) => {
     try {
       setLoading(true);
       
-      // Always try to download the version with background music first
       const baseUrl = meditation.audio_url;
       const withBgUrl = baseUrl.includes('_with_bg.mp3') 
         ? baseUrl 
         : baseUrl.replace('.mp3', '_with_bg.mp3');
       
-      // Create a temporary anchor element for download
       const downloadFile = async (url: string, fallbackUrl?: string) => {
         try {
-          // First check if the file exists
           const checkResponse = await fetch(`http://localhost:3000${url}`, { method: 'HEAD' });
           
           if (checkResponse.ok) {
-            // File exists, create download link
             const link = document.createElement('a');
             link.href = `http://localhost:3000${url}`;
             link.download = `${meditation.title || 'Meditation'}.mp3`;
@@ -200,7 +183,6 @@ const Dashboard = () => {
             document.body.removeChild(link);
             return true;
           } else if (fallbackUrl) {
-            // Try fallback URL
             console.log(`File not found at ${url}, trying fallback...`);
             return downloadFile(fallbackUrl);
           }
@@ -215,7 +197,6 @@ const Dashboard = () => {
         }
       };
       
-      // Try with background version first, then fallback to original
       const downloaded = await downloadFile(withBgUrl, baseUrl);
       
       if (downloaded) {
@@ -239,12 +220,10 @@ const Dashboard = () => {
     }
   };
 
-  // Update the handleDelete function
   const handleDelete = async (meditationId: string) => {
     try {
       setLoading(true);
       
-      // First delete from Supabase
       const { error: supabaseError } = await supabase
         .from('meditations')
         .delete()
@@ -255,7 +234,6 @@ const Dashboard = () => {
         throw new Error('Failed to delete meditation from database');
       }
       
-      // Then delete the files
       const response = await fetch('http://localhost:3000/api/delete-meditation', {
         method: 'POST',
         headers: {
@@ -268,10 +246,8 @@ const Dashboard = () => {
       
       if (!response.ok) {
         console.warn(`Delete files request failed with status ${response.status}`);
-        // Continue anyway since we deleted from the database
       }
       
-      // Remove from local state
       setMeditations(meditations.filter(m => m.id !== meditationId));
       
       toast({
@@ -292,7 +268,6 @@ const Dashboard = () => {
     }
   };
 
-  // Format creation date
   const formatCreationDate = (dateString: string) => {
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: true });
@@ -362,6 +337,15 @@ const Dashboard = () => {
               Create New
             </Link>
 
+            <Link 
+              to="/advanced-create" 
+              className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
+              onClick={() => isMobile && setSidebarOpen(false)}
+            >
+              <ChevronRight className="mr-3 h-5 w-5" />
+              Advanced Create
+            </Link>
+            
             <Link 
               to="/settings" 
               className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +14,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 const Index = lazy(() => import("./pages/Index"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const CreateMeditation = lazy(() => import("./pages/CreateMeditation"));
+const AdvancedCreateMeditation = lazy(() => import("./pages/AdvancedCreateMeditation"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -58,6 +60,14 @@ const App = () => (
                   element={
                     <ProtectedRoute>
                       <CreateMeditation />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/advanced-create" 
+                  element={
+                    <ProtectedRoute>
+                      <AdvancedCreateMeditation />
                     </ProtectedRoute>
                   } 
                 />
