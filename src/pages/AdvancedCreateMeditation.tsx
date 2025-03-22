@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -23,7 +22,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 
-// Mock data for meditation options (same as in CreateMeditation)
 const meditationStyles = [
   {
     id: "mindfulness",
@@ -47,7 +45,6 @@ const meditationStyles = [
   }
 ];
 
-// Duration options
 const durationOptions = [
   { value: "2", label: "2 minutes" },
   { value: "5", label: "5 minutes" },
@@ -57,7 +54,6 @@ const durationOptions = [
   { value: "30", label: "30 minutes" }
 ];
 
-// Voice options
 const voiceOptions = [
   { id: "alloy", name: "Emma", description: "Warm and soothing female voice" },
   { id: "echo", name: "James", description: "Deep and calming male voice" },
@@ -70,7 +66,6 @@ const voiceOptions = [
   { id: "ash", name: "Alex", description: "Neutral and versatile voice" }
 ];
 
-// Background music options
 const backgroundOptions = [
   { id: "rain", name: "Gentle Rain", description: "Soft rainfall soundscape" },
   { id: "ocean", name: "Ocean Waves", description: "Rhythmic wave sounds" },
@@ -79,7 +74,6 @@ const backgroundOptions = [
   { id: "none", name: "No Background", description: "Voice guidance only" }
 ];
 
-// Suggested meditation titles
 const suggestedTitles = [
   "Morning Clarity", 
   "Peaceful Night's Sleep", 
@@ -97,7 +91,6 @@ const AdvancedCreateMeditation = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Form state
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState("10");
   const [style, setStyle] = useState("");
@@ -114,18 +107,15 @@ const AdvancedCreateMeditation = () => {
   const [progress, setProgress] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
   const [playingBackground, setPlayingBackground] = useState<string | null>(null);
 
-  // Handle random title generation
   const getRandomTitle = () => {
     const randomTitle = suggestedTitles[Math.floor(Math.random() * suggestedTitles.length)];
     setTitle(randomTitle);
   };
 
-  // Handle script generation
   const handleGenerateScript = async () => {
     if (!style || !duration) {
       toast({
@@ -139,11 +129,8 @@ const AdvancedCreateMeditation = () => {
     setIsGeneratingScript(true);
 
     try {
-      // In a real implementation, this would call an API
-      // Simulating API call delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Mock generated script based on selected options
       const styleName = meditationStyles.find(s => s.id === style)?.name || style;
       const mockScript = `Welcome to this ${duration}-minute ${styleName} meditation. 
       
@@ -174,7 +161,6 @@ Thank you for taking this time for yourself today.`;
     }
   };
 
-  // Handle vibe generation
   const handleGenerateVibe = async () => {
     if (!vibe) {
       toast({
@@ -186,11 +172,8 @@ Thank you for taking this time for yourself today.`;
     }
 
     try {
-      // In a real implementation, this would call an API
-      // Simulating API call delay
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Generate expanded vibe description
       const expandedVibe = `The meditation should have a ${vibe} vibe. This means:
       
 - The tone should be ${vibe.includes("calm") ? "soothing and gentle" : vibe.includes("energetic") ? "uplifting and invigorating" : "balanced and centered"}
@@ -211,7 +194,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
     }
   };
 
-  // Handle audio generation
   const handleGenerateAudio = async () => {
     if (!generatedScript || !voice) {
       toast({
@@ -225,11 +207,8 @@ This vibe should be consistent throughout the meditation, helping the listener t
     setIsGeneratingAudio(true);
 
     try {
-      // In a real implementation, this would call an API
-      // Simulating API call delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Mock audio URL (in a real app, this would be the URL returned from the API)
       setAudioUrl("/voice-previews/emma.mp3");
     } catch (error) {
       console.error("Error generating audio:", error);
@@ -243,7 +222,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
     }
   };
 
-  // Handle audio playback
   const handleTogglePlay = () => {
     if (!audioUrl) return;
     
@@ -264,9 +242,7 @@ This vibe should be consistent throughout the meditation, helping the listener t
     }
   };
 
-  // Function to preview background audio
   const handlePreviewBackground = (audioId: string) => {
-    // If we're already playing this audio, stop it
     if (playingBackground === audioId) {
       if (backgroundAudioRef.current) {
         backgroundAudioRef.current.pause();
@@ -276,25 +252,21 @@ This vibe should be consistent throughout the meditation, helping the listener t
       return;
     }
     
-    // If we're playing a different audio, stop that first
     if (backgroundAudioRef.current) {
       backgroundAudioRef.current.pause();
       backgroundAudioRef.current.currentTime = 0;
     }
     
-    // Don't try to play if it's the "none" option
     if (audioId === "none") {
       setPlayingBackground(null);
       return;
     }
     
-    // Create the correct path to the audio file
     const audioPath = `/music/${audioId}.mp3`;
     
-    // Create and play the new audio
     const audio = new Audio(audioPath);
-    audio.volume = 0.5; // Set volume to 50%
-    audio.loop = true;  // Loop the audio
+    audio.volume = 0.5;
+    audio.loop = true;
     audio.play().catch(error => {
       console.error("Error playing audio:", error);
       toast({
@@ -308,7 +280,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
     setPlayingBackground(audioId);
   };
 
-  // Handle save meditation
   const handleSave = async () => {
     if (!title || !audioUrl) {
       toast({
@@ -322,8 +293,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
     setIsSaving(true);
 
     try {
-      // In a real implementation, this would save to a database
-      // Simulating API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
@@ -344,7 +313,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
     }
   };
 
-  // Handle download meditation
   const handleDownload = () => {
     if (!audioUrl) {
       toast({
@@ -355,14 +323,12 @@ This vibe should be consistent throughout the meditation, helping the listener t
       return;
     }
 
-    // In a real implementation, this would trigger an actual download
     toast({
       title: "Download started",
       description: "Your meditation is being downloaded."
     });
   };
 
-  // Set up audio event listeners
   useEffect(() => {
     if (audioUrl) {
       const audio = new Audio(audioUrl);
@@ -387,7 +353,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
     }
   }, [audioUrl]);
 
-  // Clean up background audio on unmount
   useEffect(() => {
     return () => {
       if (backgroundAudioRef.current) {
@@ -399,7 +364,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
 
   return (
     <div className="min-h-screen bg-meditation-tranquil">
-      {/* Header */}
       <header className="bg-white py-4 px-6 shadow-sm">
         <div className="container mx-auto max-w-6xl">
           <div className="flex items-center">
@@ -414,11 +378,9 @@ This vibe should be consistent throughout the meditation, helping the listener t
       <div className="container mx-auto max-w-6xl px-4 py-8">
         <div className="glass-card rounded-xl p-6 md:p-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left column - Script Creation */}
             <div>
               <h2 className="text-xl font-semibold mb-6">1. Create Your Meditation</h2>
               
-              {/* Title Input */}
               <div className="mb-6">
                 <Label htmlFor="title" className="mb-2 block">Meditation Title</Label>
                 <div className="flex">
@@ -440,7 +402,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
                 </div>
               </div>
               
-              {/* Style Selection */}
               <div className="mb-6">
                 <Label htmlFor="style" className="mb-2 block">Meditation Style</Label>
                 <Select value={style} onValueChange={setStyle}>
@@ -460,7 +421,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
                 </Select>
               </div>
               
-              {/* Duration Selection */}
               <div className="mb-6">
                 <Label htmlFor="duration" className="mb-2 block">Duration</Label>
                 <Select value={duration} onValueChange={setDuration}>
@@ -477,7 +437,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
                 </Select>
               </div>
               
-              {/* Goals Input */}
               <div className="mb-6">
                 <Label htmlFor="goals" className="mb-2 block">Meditation Goals</Label>
                 <Textarea
@@ -492,7 +451,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
                 </p>
               </div>
               
-              {/* Generate Script Button */}
               <Button 
                 className="w-full mb-6" 
                 onClick={handleGenerateScript}
@@ -511,7 +469,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
                 )}
               </Button>
               
-              {/* Generated Script Output */}
               <div className="mb-6">
                 <Label htmlFor="script" className="mb-2 flex justify-between">
                   <span>Meditation Script</span>
@@ -530,11 +487,9 @@ This vibe should be consistent throughout the meditation, helping the listener t
               </div>
             </div>
             
-            {/* Right column - Voice, Vibe, and Audio Generation */}
             <div>
               <h2 className="text-xl font-semibold mb-6">2. Create Your Audio</h2>
               
-              {/* Voice Selection */}
               <div className="mb-6">
                 <Label htmlFor="voice" className="mb-2 block">Select Voice</Label>
                 <Select value={voice} onValueChange={setVoice}>
@@ -554,7 +509,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
                 </Select>
               </div>
               
-              {/* Vibe Input */}
               <div className="mb-6">
                 <Label htmlFor="vibe" className="mb-2 block">Meditation Vibe</Label>
                 <div className="flex">
@@ -580,7 +534,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
                 </p>
               </div>
               
-              {/* Vibe Expansion Output */}
               {editedVibe && (
                 <div className="mb-6">
                   <Label htmlFor="expandedVibe" className="mb-2 flex justify-between">
@@ -596,25 +549,26 @@ This vibe should be consistent throughout the meditation, helping the listener t
                 </div>
               )}
               
-              {/* Background Selection */}
               <div className="mb-6">
                 <Label htmlFor="background" className="mb-2 block">Background Music</Label>
                 <div className="flex space-x-2">
-                  <Select value={background} onValueChange={setBackground} className="flex-1">
-                    <SelectTrigger id="background">
-                      <SelectValue placeholder="Choose background" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {backgroundOptions.map((option) => (
-                        <SelectItem key={option.id} value={option.id}>
-                          <div className="flex flex-col">
-                            <span>{option.name}</span>
-                            <span className="text-xs text-muted-foreground">{option.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex-1">
+                    <Select value={background} onValueChange={setBackground}>
+                      <SelectTrigger id="background">
+                        <SelectValue placeholder="Choose background" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {backgroundOptions.map((option) => (
+                          <SelectItem key={option.id} value={option.id}>
+                            <div className="flex flex-col">
+                              <span>{option.name}</span>
+                              <span className="text-xs text-muted-foreground">{option.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   
                   {background && background !== "none" && (
                     <Button
@@ -627,7 +581,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
                 </div>
               </div>
               
-              {/* Generate Audio Button */}
               <Button 
                 className="w-full mb-6" 
                 onClick={handleGenerateAudio}
@@ -646,7 +599,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
                 )}
               </Button>
               
-              {/* Audio Player */}
               {audioUrl && (
                 <div className="mb-8 bg-meditation-light-blue/30 rounded-xl p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -690,7 +642,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
                 </div>
               )}
               
-              {/* Action Buttons */}
               {audioUrl && (
                 <div className="flex flex-wrap gap-3">
                   <Button 
@@ -715,7 +666,6 @@ This vibe should be consistent throughout the meditation, helping the listener t
           </div>
         </div>
         
-        {/* Helpful hint */}
         <div className="mt-6 flex items-start p-4 bg-meditation-light-blue/50 rounded-lg max-w-3xl mx-auto">
           <Info size={20} className="text-meditation-deep-blue mr-3 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-foreground/70">

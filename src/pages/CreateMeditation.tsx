@@ -151,7 +151,6 @@ const CreateMeditation = () => {
   const [generatedMeditation, setGeneratedMeditation] = useState<GeneratedMeditation | null>(null);
   const [error, setError] = useState("");
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
   const isMobile = useIsMobile();
@@ -322,8 +321,8 @@ const CreateMeditation = () => {
     }
   };
 
-  // Simple function to play audio with proper error handling
-  const playAudio = async (url) => {
+  // Simple function to play audio with proper error handling and typing
+  const playAudio = async (url: string): Promise<HTMLAudioElement> => {
     return new Promise((resolve, reject) => {
       const audio = new Audio(url);
       
@@ -333,19 +332,19 @@ const CreateMeditation = () => {
         resolve(audio);
       };
       
-      const onError = (e) => {
+      const onError = (e: ErrorEvent) => {
         audio.removeEventListener('canplaythrough', onCanPlay);
         audio.removeEventListener('error', onError);
         reject(new Error(`Failed to load audio: ${e.message}`));
       };
       
       audio.addEventListener('canplaythrough', onCanPlay);
-      audio.addEventListener('error', onError);
+      audio.addEventListener('error', onError as EventListener);
       audio.load();
     });
   };
 
-  // Update the handlePlayPause function
+  // Update the handlePlayPause function with proper typing
   const handlePlayPause = async () => {
     if (!generatedMeditation?.audio_url) return;
     
@@ -502,7 +501,7 @@ const CreateMeditation = () => {
     }
   };
 
-  // Function to preview background audio
+  // Function to preview background audio with proper typing
   const handlePreviewAudio = (audioId: string) => {
     // If we're already playing this audio, stop it
     if (playingAudio === audioId) {
@@ -1337,4 +1336,3 @@ const CreateMeditation = () => {
 };
 
 export default CreateMeditation;
-
