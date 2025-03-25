@@ -21,6 +21,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/use-user";
 import { saveAs } from 'file-saver';
+import api from '@/lib/api';
 
 // Mock data for meditation options
 const meditationStyles = [
@@ -230,16 +231,10 @@ const CreateMeditation = () => {
       
       // Step 1: Generate the meditation script
       setLoadingMessage("Generating meditation script...");
-      const scriptResponse = await fetch('http://localhost:3000/api/generate-script', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          style,
-          duration,
-          goals
-        }),
+      const scriptResponse = await api.post('/api/generate-script', {
+        style,
+        duration,
+        goals
       });
       
       if (!scriptResponse.ok) {
@@ -251,16 +246,10 @@ const CreateMeditation = () => {
       
       // Step 2: Generate TTS audio files
       setLoadingMessage("Generating voice audio...");
-      const ttsResponse = await fetch('http://localhost:3000/api/generate-tts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          script: scriptData.script,
-          voice,
-          sessionId: newSessionId
-        }),
+      const ttsResponse = await api.post('/api/generate-tts', {
+        script: scriptData.script,
+        voice,
+        sessionId: newSessionId
       });
       
       if (!ttsResponse.ok) {
@@ -272,16 +261,10 @@ const CreateMeditation = () => {
       
       // Step 3: Process the audio files
       setLoadingMessage("Processing audio and adding background music...");
-      const processResponse = await fetch('http://localhost:3000/api/process-audio', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sessionId: newSessionId,
-          audioFiles: ttsData.audioFiles,
-          background: background === 'none' ? null : background
-        }),
+      const processResponse = await api.post('/api/process-audio', {
+        sessionId: newSessionId,
+        audioFiles: ttsData.audioFiles,
+        background: background === 'none' ? null : background
       });
       
       if (!processResponse.ok) {
@@ -647,15 +630,9 @@ const CreateMeditation = () => {
       setLoadingMessage("Discarding meditation...");
       
       // Call the delete API
-      const response = await fetch('http://localhost:3000/api/delete-meditation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          meditationId: generatedMeditation.id,
-          // Don't pass userId since it's not saved to Supabase yet
-        }),
+      const response = await api.post('/api/delete-meditation', {
+        meditationId: generatedMeditation.id,
+        // Don't pass userId since it's not saved to Supabase yet
       });
       
       if (!response.ok) {
