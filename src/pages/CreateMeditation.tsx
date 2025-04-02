@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, RefreshCw, Clock, CheckCircle, Mic, Music, Play, Save, Download, X, Info, ChevronLeft, ChevronRight, Pause } from "lucide-react";
@@ -231,47 +230,32 @@ const CreateMeditation = () => {
       
       // Step 1: Generate the meditation script
       setLoadingMessage("Generating meditation script...");
-      const scriptResponse = await api.post('/api/generate-script', {
+      const scriptData = await api.post('/api/generate-script', {
         style,
         duration,
         goals
       });
       
-      if (!scriptResponse.ok) {
-        throw new Error(`Script generation failed with status ${scriptResponse.status}`);
-      }
-      
-      const scriptData = await scriptResponse.json();
       setGeneratedScript(scriptData.script);
       
       // Step 2: Generate TTS audio files
       setLoadingMessage("Generating voice audio...");
-      const ttsResponse = await api.post('/api/generate-tts', {
+      const ttsData = await api.post('/api/generate-tts', {
         script: scriptData.script,
         voice,
         sessionId: newSessionId
       });
       
-      if (!ttsResponse.ok) {
-        throw new Error(`TTS generation failed with status ${ttsResponse.status}`);
-      }
-      
-      const ttsData = await ttsResponse.json();
       console.log("TTS response:", ttsData);
       
       // Step 3: Process the audio files
       setLoadingMessage("Processing audio and adding background music...");
-      const processResponse = await api.post('/api/process-audio', {
+      const processedData = await api.post('/api/process-audio', {
         sessionId: newSessionId,
         audioFiles: ttsData.audioFiles,
         background: background === 'none' ? null : background
       });
       
-      if (!processResponse.ok) {
-        throw new Error(`Process audio request failed with status ${processResponse.status}`);
-      }
-      
-      const processedData = await processResponse.json();
       console.log("Process audio response:", processedData);
       
       // Check if processing was successful

@@ -114,49 +114,49 @@ const Dashboard = () => {
       if (audioRef.current) {
         audioRef.current.pause();
         setPlayingId(null);
+        audioRef.current = null;
       }
     } else {
       if (audioRef.current) {
         audioRef.current.pause();
       }
       
+      if (!audioUrl) {
+        console.error("Audio URL is missing for meditation:", id);
+        toast({
+          title: "Playback Error",
+          description: "Audio URL is missing for this meditation.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       try {
-        const baseUrl = audioUrl;
-        const withBgUrl = baseUrl.includes('_with_bg.mp3') 
-          ? baseUrl 
-          : baseUrl.replace('.mp3', '_with_bg.mp3');
+        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'; 
+        const fullAudioUrl = audioUrl.startsWith('http') ? audioUrl : `${apiBaseUrl}${audioUrl}`;
         
-        try {
-          const audio = await loadAudio(`http://localhost:3000${withBgUrl}`);
-          
-          audio.addEventListener('ended', () => {
-            setPlayingId(null);
-          });
-          
-          audioRef.current = audio;
-          await audio.play();
-          setPlayingId(id);
-          
-        } catch (bgError) {
-          console.error("Error playing audio with background, trying original:", bgError);
-          
-          const audio = await loadAudio(`http://localhost:3000${baseUrl}`);
-          
-          audio.addEventListener('ended', () => {
-            setPlayingId(null);
-          });
-          
-          audioRef.current = audio;
-          await audio.play();
-          setPlayingId(id);
-        }
+        console.log(`Attempting to load audio: ${fullAudioUrl}`);
+        
+        const audio = await loadAudio(fullAudioUrl);
+        
+        audio.addEventListener('ended', () => {
+          setPlayingId(null);
+          audioRef.current = null;
+        });
+        
+        audioRef.current = audio;
+        await audio.play();
+        setPlayingId(id);
+        
       } catch (error) {
         console.error("Error playing audio:", error);
         toast({
           title: "Playback Error",
-          description: "Failed to play meditation audio",
+          description: error instanceof Error ? error.message : "Failed to play meditation audio",
           variant: "destructive"
         });
+        setPlayingId(null);
+        audioRef.current = null;
       }
     }
   };
