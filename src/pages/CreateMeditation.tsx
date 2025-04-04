@@ -21,7 +21,6 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/use-user";
 import { saveAs } from 'file-saver';
 import api from '@/lib/api';
-import { audioUtils } from '@/lib/audio-utils';
 
 // Mock data for meditation options
 const meditationStyles = [
@@ -165,6 +164,7 @@ const CreateMeditation = () => {
   const [progress, setProgress] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isAudioReady, setIsAudioReady] = useState(false);
+  const [, forceUpdate] = useState({});
 
   // Get random suggested titles
   const getRandomTitle = () => {
@@ -330,39 +330,35 @@ const CreateMeditation = () => {
       if (audioRef.current) {
         audioRef.current.pause();
         setIsPlaying(false);
-        audioRef.current = null;
       }
     } else {
       try {
-        const fullUrl = audioUtils.getFullUrl(generatedMeditation.audio_url);
-        const withBgUrl = audioUtils.getBackgroundUrl(fullUrl);
+        let audio = audioRef.current;
         
-        console.log(`Attempting to load audio: ${withBgUrl}`);
-        
-        try {
-          const audio = await playAudio(withBgUrl);
-          audio.addEventListener('ended', () => {
-            setIsPlaying(false);
-            audioRef.current = null;
-          });
+        if (!audio) {
+          // Get the background version URL if it's a Supabase URL
+          const audioUrl = generatedMeditation.audio_url;
+          const withBgUrl = audioUrl.includes('supabase.co') 
+            ? audioUrl.replace('.mp3', '_with_bg.mp3')
+            : audioUrl;
+          
+          console.log(`Attempting to load audio: ${withBgUrl}`);
+          
+          try {
+            audio = await playAudio(withBgUrl);
+            setupAudioListeners(audio);
+          } catch (bgError) {
+            // Fallback to original version if background version fails
+            console.log('Background version failed, trying original:', audioUrl);
+            audio = await playAudio(audioUrl);
+            setupAudioListeners(audio);
+          }
           
           audioRef.current = audio;
-          await audio.play();
-          setIsPlaying(true);
-        } catch (bgError) {
-          // Fallback to original version if background version fails
-          console.log('Background version failed, trying original:', fullUrl);
-          const audio = await playAudio(fullUrl);
-          
-          audio.addEventListener('ended', () => {
-            setIsPlaying(false);
-            audioRef.current = null;
-          });
-          
-          audioRef.current = audio;
-          await audio.play();
-          setIsPlaying(true);
         }
+        
+        await audio.play();
+        setIsPlaying(true);
       } catch (error) {
         console.error("Error playing audio:", error);
         toast({
@@ -374,6 +370,39 @@ const CreateMeditation = () => {
         audioRef.current = null;
       }
     }
+  };
+
+  // Add a helper function to setup audio event listeners
+  const setupAudioListeners = (audio: HTMLAudioElement) => {
+    // Remove any existing listeners first
+    audio.removeEventListener('timeupdate', handleTimeUpdate);
+    audio.removeEventListener('ended', handleAudioEnded);
+    audio.removeEventListener('loadedmetadata', handleMetadataLoaded);
+    
+    // Add the event listeners
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleAudioEnded);
+    audio.addEventListener('loadedmetadata', handleMetadataLoaded);
+  };
+
+  // Add handlers for audio events
+  const handleTimeUpdate = () => {
+    const audio = audioRef.current;
+    if (audio && audio.duration) {
+      const currentProgress = (audio.currentTime / audio.duration) * 100;
+      setProgress(currentProgress);
+      // Force a re-render for the time display
+      forceUpdate({});
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+    setProgress(0);
+  };
+
+  const handleMetadataLoaded = () => {
+    setIsAudioReady(true);
   };
 
   // Update the handleSave function to ensure it works properly
@@ -448,8 +477,10 @@ const CreateMeditation = () => {
     try {
       setLoadingMessage("Preparing download...");
       
-      const fullUrl = audioUtils.getFullUrl(generatedMeditation.audio_url);
-      const withBgUrl = audioUtils.getBackgroundUrl(fullUrl);
+      const audioUrl = generatedMeditation.audio_url;
+      const withBgUrl = audioUrl.includes('supabase.co') 
+        ? audioUrl.replace('.mp3', '_with_bg.mp3')
+        : audioUrl;
       
       const downloadFile = async (url: string, fallbackUrl?: string) => {
         try {
@@ -478,7 +509,7 @@ const CreateMeditation = () => {
         }
       };
       
-      const downloaded = await downloadFile(withBgUrl, fullUrl);
+      const downloaded = await downloadFile(withBgUrl, audioUrl);
       
       if (downloaded) {
         toast({
@@ -496,6 +527,8 @@ const CreateMeditation = () => {
         description: "Failed to download meditation. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setLoadingMessage("");
     }
   };
 
@@ -680,11 +713,11 @@ const CreateMeditation = () => {
     }
   };
 
-  // Update the handleProgressClick function to work when paused
+  // Update the handleProgressClick function to work better
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!audioRef.current || !isAudioReady) return;
     
-    const audio = audioRef.current as HTMLAudioElement;
+    const audio = audioRef.current;
     const progressBar = e.currentTarget;
     const rect = progressBar.getBoundingClientRect();
     const clickPosition = e.clientX - rect.left;
@@ -697,6 +730,35 @@ const CreateMeditation = () => {
     if (audio.duration) {
       audio.currentTime = (percentageClicked / 100) * audio.duration;
     }
+  };
+
+  // Add a function to handle progress bar dragging
+  const handleProgressDrag = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!audioRef.current || !isAudioReady) return;
+    
+    const progressBar = e.currentTarget;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      
+      const rect = progressBar.getBoundingClientRect();
+      const clickPosition = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+      const percentageClicked = (clickPosition / rect.width) * 100;
+      
+      setProgress(percentageClicked);
+      if (audio.duration) {
+        audio.currentTime = (percentageClicked / 100) * audio.duration;
+      }
+    };
+    
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   };
 
   // Add this function to pause audio when navigating away
@@ -726,31 +788,22 @@ const CreateMeditation = () => {
     if (!generatedMeditation) return;
     
     try {
-      // Create audio element
-      const audio = new Audio(`http://localhost:3000${generatedMeditation.audio_url}`);
+      const audioUrl = generatedMeditation.audio_url;
+      const withBgUrl = audioUrl.includes('supabase.co') 
+        ? audioUrl.replace('.mp3', '_with_bg.mp3')
+        : audioUrl;
       
-      // Set up event listeners
-      audio.addEventListener('timeupdate', () => {
-        if (audio.duration) {
-          setProgress((audio.currentTime / audio.duration) * 100);
-        }
+      const audio = new Audio(withBgUrl);
+      setupAudioListeners(audio);
+      
+      audio.addEventListener('error', async (e) => {
+        console.error('Error with background version, trying original:', e);
+        const originalAudio = new Audio(audioUrl);
+        setupAudioListeners(originalAudio);
+        audioRef.current = originalAudio;
       });
       
-      audio.addEventListener('ended', () => {
-        setIsPlaying(false);
-        setProgress(0);
-      });
-      
-      audio.addEventListener('loadedmetadata', () => {
-        // Once metadata is loaded, update the duration display
-        // No need to convert to minutes here as formatDuration will handle it
-        setIsAudioReady(true);
-      });
-      
-      // Load the audio
       audioRef.current = audio;
-      
-      // Don't auto-play, just prepare the audio
       setLoadingMessage("");
     } catch (error) {
       console.error('Error initializing audio:', error);
@@ -1260,16 +1313,24 @@ const CreateMeditation = () => {
                   <div 
                     className="h-2 bg-gray-200 rounded-full overflow-hidden cursor-pointer relative group"
                     onClick={handleProgressClick}
+                    onMouseDown={handleProgressDrag}
+                    role="slider"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={progress}
+                    tabIndex={0}
                   >
                     <div 
-                      className="h-full bg-meditation-calm-blue transition-all duration-300" 
+                      className="h-full bg-meditation-calm-blue transition-all duration-100" 
                       style={{ width: `${progress}%` }}
                     ></div>
                     
                     {/* Scrubbing indicator dot that appears on hover */}
-                    <div className="absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
-                         style={{ left: `${progress}%` }}>
-                      <div className="w-3 h-3 bg-white border-2 border-meditation-calm-blue rounded-full -ml-1.5"></div>
+                    <div 
+                      className="absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ left: `${progress}%` }}
+                    >
+                      <div className="w-3 h-3 bg-white border-2 border-meditation-calm-blue rounded-full -ml-1.5 cursor-grab active:cursor-grabbing"></div>
                     </div>
                   </div>
                 </div>

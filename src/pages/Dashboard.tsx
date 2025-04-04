@@ -12,7 +12,6 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/use-user";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
-import { audioUtils } from '@/lib/audio-utils';
 
 interface Meditation {
   id: string;
@@ -134,8 +133,9 @@ const Dashboard = () => {
       
       try {
         // Try playing with background audio first
-        const fullUrl = audioUtils.getFullUrl(audioUrl);
-        const withBgUrl = audioUtils.getBackgroundUrl(fullUrl);
+        const withBgUrl = audioUrl.includes('supabase.co') 
+          ? audioUrl.replace('.mp3', '_with_bg.mp3')
+          : audioUrl;
         
         console.log(`Attempting to load audio: ${withBgUrl}`);
         
@@ -151,8 +151,8 @@ const Dashboard = () => {
           setPlayingId(id);
         } catch (bgError) {
           // Fallback to original version if background version fails
-          console.log('Background version failed, trying original:', fullUrl);
-          const audio = await loadAudio(fullUrl);
+          console.log('Background version failed, trying original:', audioUrl);
+          const audio = await loadAudio(audioUrl);
           
           audio.addEventListener('ended', () => {
             setPlayingId(null);
@@ -180,8 +180,9 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
-      const fullUrl = audioUtils.getFullUrl(meditation.audio_url);
-      const withBgUrl = audioUtils.getBackgroundUrl(fullUrl);
+      const withBgUrl = meditation.audio_url.includes('supabase.co') 
+        ? meditation.audio_url.replace('.mp3', '_with_bg.mp3')
+        : meditation.audio_url;
       
       const downloadFile = async (url: string, fallbackUrl?: string) => {
         try {
@@ -210,7 +211,7 @@ const Dashboard = () => {
         }
       };
       
-      const downloaded = await downloadFile(withBgUrl, fullUrl);
+      const downloaded = await downloadFile(withBgUrl, meditation.audio_url);
       
       if (downloaded) {
         toast({
