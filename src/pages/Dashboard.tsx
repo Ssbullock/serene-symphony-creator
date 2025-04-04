@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/use-user";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
+import { audioUtils } from '@/lib/audio-utils';
 
 interface Meditation {
   id: string;
@@ -132,22 +133,36 @@ const Dashboard = () => {
       }
       
       try {
-        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'; 
-        const fullAudioUrl = audioUrl.startsWith('http') ? audioUrl : `${apiBaseUrl}${audioUrl}`;
+        // Try playing with background audio first
+        const fullUrl = audioUtils.getFullUrl(audioUrl);
+        const withBgUrl = audioUtils.getBackgroundUrl(fullUrl);
         
-        console.log(`Attempting to load audio: ${fullAudioUrl}`);
+        console.log(`Attempting to load audio: ${withBgUrl}`);
         
-        const audio = await loadAudio(fullAudioUrl);
-        
-        audio.addEventListener('ended', () => {
-          setPlayingId(null);
-          audioRef.current = null;
-        });
-        
-        audioRef.current = audio;
-        await audio.play();
-        setPlayingId(id);
-        
+        try {
+          const audio = await loadAudio(withBgUrl);
+          audio.addEventListener('ended', () => {
+            setPlayingId(null);
+            audioRef.current = null;
+          });
+          
+          audioRef.current = audio;
+          await audio.play();
+          setPlayingId(id);
+        } catch (bgError) {
+          // Fallback to original version if background version fails
+          console.log('Background version failed, trying original:', fullUrl);
+          const audio = await loadAudio(fullUrl);
+          
+          audio.addEventListener('ended', () => {
+            setPlayingId(null);
+            audioRef.current = null;
+          });
+          
+          audioRef.current = audio;
+          await audio.play();
+          setPlayingId(id);
+        }
       } catch (error) {
         console.error("Error playing audio:", error);
         toast({
@@ -165,18 +180,16 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
-      const baseUrl = meditation.audio_url;
-      const withBgUrl = baseUrl.includes('_with_bg.mp3') 
-        ? baseUrl 
-        : baseUrl.replace('.mp3', '_with_bg.mp3');
+      const fullUrl = audioUtils.getFullUrl(meditation.audio_url);
+      const withBgUrl = audioUtils.getBackgroundUrl(fullUrl);
       
       const downloadFile = async (url: string, fallbackUrl?: string) => {
         try {
-          const checkResponse = await fetch(`http://localhost:3000${url}`, { method: 'HEAD' });
+          const checkResponse = await fetch(url, { method: 'HEAD' });
           
           if (checkResponse.ok) {
             const link = document.createElement('a');
-            link.href = `http://localhost:3000${url}`;
+            link.href = url;
             link.download = `${meditation.title || 'Meditation'}.mp3`;
             document.body.appendChild(link);
             link.click();
@@ -197,7 +210,7 @@ const Dashboard = () => {
         }
       };
       
-      const downloaded = await downloadFile(withBgUrl, baseUrl);
+      const downloaded = await downloadFile(withBgUrl, fullUrl);
       
       if (downloaded) {
         toast({

@@ -21,6 +21,7 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/use-user";
 import { saveAs } from 'file-saver';
 import api from '@/lib/api';
+import { audioUtils } from '@/lib/audio-utils';
 
 // Mock data for meditation options
 const meditationStyles = [
@@ -316,52 +317,61 @@ const CreateMeditation = () => {
 
   // Update the handlePlayPause function with proper typing
   const handlePlayPause = async () => {
-    if (!generatedMeditation?.audio_url) return;
-    
+    if (!generatedMeditation?.audio_url) {
+      toast({
+        title: "No Audio Available",
+        description: "Please generate a meditation first",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (isPlaying) {
-      // Pause the audio
       if (audioRef.current) {
         audioRef.current.pause();
         setIsPlaying(false);
+        audioRef.current = null;
       }
     } else {
-      // Play the audio
       try {
-        setLoadingMessage("Loading audio...");
+        const fullUrl = audioUtils.getFullUrl(generatedMeditation.audio_url);
+        const withBgUrl = audioUtils.getBackgroundUrl(fullUrl);
         
-        // Get the full URL
-        const audioUrl = `http://localhost:3000${generatedMeditation.audio_url}`;
-        console.log("Playing audio from:", audioUrl);
+        console.log(`Attempting to load audio: ${withBgUrl}`);
         
-        // Create and load the audio
-        const audio = await playAudio(audioUrl);
-        
-        // Set up event listeners
-        audio.addEventListener('timeupdate', () => {
-          if (audio.duration) {
-            setProgress((audio.currentTime / audio.duration) * 100);
-          }
-        });
-        
-        audio.addEventListener('ended', () => {
-          setIsPlaying(false);
-          setProgress(0);
-        });
-        
-        // Play the audio
-        audioRef.current = audio;
-        await audio.play();
-        setIsPlaying(true);
-        setLoadingMessage("");
-        
+        try {
+          const audio = await playAudio(withBgUrl);
+          audio.addEventListener('ended', () => {
+            setIsPlaying(false);
+            audioRef.current = null;
+          });
+          
+          audioRef.current = audio;
+          await audio.play();
+          setIsPlaying(true);
+        } catch (bgError) {
+          // Fallback to original version if background version fails
+          console.log('Background version failed, trying original:', fullUrl);
+          const audio = await playAudio(fullUrl);
+          
+          audio.addEventListener('ended', () => {
+            setIsPlaying(false);
+            audioRef.current = null;
+          });
+          
+          audioRef.current = audio;
+          await audio.play();
+          setIsPlaying(true);
+        }
       } catch (error) {
         console.error("Error playing audio:", error);
-        setLoadingMessage("");
         toast({
           title: "Playback Error",
-          description: "Failed to play meditation audio. Please try downloading instead.",
+          description: error instanceof Error ? error.message : "Failed to play meditation audio",
           variant: "destructive"
         });
+        setIsPlaying(false);
+        audioRef.current = null;
       }
     }
   };
@@ -426,46 +436,64 @@ const CreateMeditation = () => {
 
   // Update the handleDownload function
   const handleDownload = async () => {
-    if (!generatedMeditation?.audio_url) return;
-    
+    if (!generatedMeditation?.audio_url) {
+      toast({
+        title: "No Audio Available",
+        description: "Please generate a meditation first",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setLoadingMessage("Preparing download...");
       
-      // Try to download the version with background music first
-      const baseUrl = generatedMeditation.audio_url;
-      const withBgUrl = baseUrl.includes('_with_bg.mp3') 
-        ? baseUrl 
-        : baseUrl.replace('.mp3', '_with_bg.mp3');
+      const fullUrl = audioUtils.getFullUrl(generatedMeditation.audio_url);
+      const withBgUrl = audioUtils.getBackgroundUrl(fullUrl);
       
-      // Create a safe filename
-      const filename = `${title || getStyleName(style)}_meditation.mp3`.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const downloadFile = async (url: string, fallbackUrl?: string) => {
+        try {
+          const checkResponse = await fetch(url, { method: 'HEAD' });
+          
+          if (checkResponse.ok) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${generatedMeditation.title || 'Meditation'}.mp3`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            return true;
+          } else if (fallbackUrl) {
+            console.log(`File not found at ${url}, trying fallback...`);
+            return downloadFile(fallbackUrl);
+          }
+          return false;
+        } catch (error) {
+          console.error(`Error downloading from ${url}:`, error);
+          if (fallbackUrl) {
+            console.log('Trying fallback URL...');
+            return downloadFile(fallbackUrl);
+          }
+          return false;
+        }
+      };
       
-      // Create a temporary anchor element to trigger download
-      const a = document.createElement('a');
-      a.href = `http://localhost:3000${withBgUrl}`;
-      a.download = filename;
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
+      const downloaded = await downloadFile(withBgUrl, fullUrl);
       
-      // Small delay before removing the element
-      setTimeout(() => {
-        document.body.removeChild(a);
-        setLoadingMessage("");
-      }, 500);
-      
-      toast({
-        title: "Download Started",
-        description: "Your meditation is being downloaded.",
-        variant: "default"
-      });
-      
+      if (downloaded) {
+        toast({
+          title: "Download Started",
+          description: "Your meditation is being downloaded",
+          variant: "default"
+        });
+      } else {
+        throw new Error("Could not download meditation file");
+      }
     } catch (error) {
       console.error('Error downloading meditation:', error);
-      setLoadingMessage("");
       toast({
         title: "Download Failed",
-        description: "Failed to download your meditation. Please try again.",
+        description: "Failed to download meditation. Please try again.",
         variant: "destructive"
       });
     }
