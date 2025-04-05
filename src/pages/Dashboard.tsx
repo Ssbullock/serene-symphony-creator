@@ -132,9 +132,11 @@ const Dashboard = () => {
       }
       
       try {
-        // Try playing with background audio first
+        // Try playing with background audio first, but only append _with_bg if not already present
         const withBgUrl = audioUrl.includes('supabase.co') 
-          ? audioUrl.replace('.mp3', '_with_bg.mp3')
+          ? audioUrl.includes('_with_bg.mp3') 
+            ? audioUrl 
+            : audioUrl.replace('.mp3', '_with_bg.mp3')
           : audioUrl;
         
         console.log(`Attempting to load audio: ${withBgUrl}`);
@@ -181,7 +183,9 @@ const Dashboard = () => {
       setLoading(true);
       
       const withBgUrl = meditation.audio_url.includes('supabase.co') 
-        ? meditation.audio_url.replace('.mp3', '_with_bg.mp3')
+        ? meditation.audio_url.includes('_with_bg.mp3')
+          ? meditation.audio_url
+          : meditation.audio_url.replace('.mp3', '_with_bg.mp3')
         : meditation.audio_url;
       
       const downloadFile = async (url: string, fallbackUrl?: string) => {

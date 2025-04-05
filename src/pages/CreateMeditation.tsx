@@ -336,7 +336,9 @@ const CreateMeditation = () => {
         // Get the background version URL if it's a Supabase URL
         const audioUrl = generatedMeditation.audio_url;
         const withBgUrl = audioUrl.includes('supabase.co') 
-          ? audioUrl.replace('.mp3', '_with_bg.mp3')
+          ? audioUrl.includes('_with_bg.mp3')
+            ? audioUrl
+            : audioUrl.replace('.mp3', '_with_bg.mp3')
           : audioUrl;
         
         console.log(`Attempting to load audio: ${withBgUrl}`);
@@ -452,7 +454,9 @@ const CreateMeditation = () => {
       
       const audioUrl = generatedMeditation.audio_url;
       const withBgUrl = audioUrl.includes('supabase.co') 
-        ? audioUrl.replace('.mp3', '_with_bg.mp3')
+        ? audioUrl.includes('_with_bg.mp3')
+          ? audioUrl
+          : audioUrl.replace('.mp3', '_with_bg.mp3')
         : audioUrl;
       
       const downloadFile = async (url: string, fallbackUrl?: string) => {
@@ -764,7 +768,9 @@ const CreateMeditation = () => {
       // Create audio element with direct Supabase URL
       const audioUrl = generatedMeditation.audio_url;
       const withBgUrl = audioUrl.includes('supabase.co') 
-        ? audioUrl.replace('.mp3', '_with_bg.mp3')
+        ? audioUrl.includes('_with_bg.mp3')
+          ? audioUrl
+          : audioUrl.replace('.mp3', '_with_bg.mp3')
         : audioUrl;
       
       const audio = new Audio(withBgUrl);
