@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, ChevronRight } from "lucide-react";
@@ -20,8 +21,10 @@ interface Meditation {
   style: string;
   audio_url: string;
   created_at: string;
-  background: string;
+  background: string | null;
   voice: string;
+  user_id: string;
+  goals?: string | null;
 }
 
 const Dashboard = () => {
@@ -57,7 +60,12 @@ const Dashboard = () => {
           throw error;
         }
         
-        setMeditations(data || []);
+        // Ensure the data is properly typed as Meditation[]
+        if (data) {
+          setMeditations(data as Meditation[]);
+        } else {
+          setMeditations([]);
+        }
       } catch (error) {
         console.error('Error fetching meditations:', error);
         toast({
