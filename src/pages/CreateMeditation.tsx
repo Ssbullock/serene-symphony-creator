@@ -831,7 +831,7 @@ const CreateMeditation = () => {
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <h1 className="text-2xl font-semibold mb-4">Please Sign In</h1>
         <p className="text-foreground/70 mb-4">You need to be signed in to create meditations.</p>
-        <Button onClick={() => navigate('/login')}>Sign In</Button>
+        <Button onClick={() => navigate('/auth')}>Sign In</Button>
       </div>
     );
   }
