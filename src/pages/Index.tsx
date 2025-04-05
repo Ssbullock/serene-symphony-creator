@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Play, ArrowRight, CheckCircle, ExternalLink, ChevronDown, ChevronUp, Star, Sparkles } from "lucide-react";
+import { Play, ArrowRight, CheckCircle, ExternalLink, ChevronDown, ChevronUp, Star, Sparkles, BadgeDollarSign, BadgePercent } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const Index = () => {
   const [isVisible, setIsVisible] = useState({
@@ -12,6 +13,9 @@ const Index = () => {
     pricing: false,
     testimonials: false,
   });
+
+  const [billingPeriod, setBillingPeriod] = useState("monthly");
+  const annualDiscount = 25; // 25% discount for annual billing
 
   const howItWorksRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
@@ -234,7 +238,7 @@ const Index = () => {
                 icon: (
                   <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center shadow-lg shadow-blue-200/50 animate-pulse-soft" style={{animationDelay: "0.9s"}}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
                   </div>
                 ),
@@ -264,59 +268,79 @@ const Index = () => {
         </div>
         
         <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="text-center mb-16">
+          <div className="text-center mb-6">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 relative inline-block">
               Pricing <span className="text-gradient animate-pulse-soft">Plans</span>
               <Sparkles className="absolute -right-6 -top-6 text-green-400 animate-pulse-soft" size={24} />
             </h2>
-            <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
+            <p className="text-lg text-foreground/70 max-w-2xl mx-auto mb-8">
               Choose the perfect plan for your meditation journey
             </p>
+            
+            <div className="flex justify-center items-center mb-10">
+              <span className="text-sm font-medium mr-3">Monthly</span>
+              <ToggleGroup type="single" value={billingPeriod} onValueChange={(value) => value && setBillingPeriod(value)}>
+                <ToggleGroupItem value="monthly" aria-label="Toggle monthly billing" className="data-[state=on]:bg-meditation-deep-blue data-[state=on]:text-white">
+                  Monthly
+                </ToggleGroupItem>
+                <ToggleGroupItem value="annual" aria-label="Toggle annual billing" className="data-[state=on]:bg-meditation-deep-blue data-[state=on]:text-white">
+                  Annual <BadgePercent size={14} className="ml-1" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+              <span className="text-sm font-medium ml-3 flex items-center">
+                Annual <span className="ml-1 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">{annualDiscount}% off</span>
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                name: "Monthly",
-                price: "$12.99",
-                description: "Perfect for those just starting their meditation journey",
+                name: "Free",
+                price: "$0",
+                period: billingPeriod === "monthly" ? "forever" : "forever",
+                description: "Perfect for getting started with meditation",
                 features: [
-                  "Unlimited AI meditations",
-                  "All voice options",
-                  "All background sounds",
-                  "Download meditations",
-                  "New voices added monthly"
+                  "Basic meditation generation",
+                  "Standard voices",
+                  "5-minute meditations",
+                  "3 meditations per month",
+                  "Basic background sounds"
                 ],
-                btnText: "Start Monthly Plan",
+                btnText: "Start Free Plan",
                 popular: false,
                 delay: 0
               },
               {
-                name: "Annual",
-                price: "$74.99",
-                period: "per year",
-                description: "Our most popular choice with extra savings",
+                name: "Premium",
+                price: billingPeriod === "monthly" ? "$9.99" : `$${Math.floor(9.99 * 12 * (1 - annualDiscount/100))}`,
+                period: billingPeriod === "monthly" ? "per month" : "per year",
+                description: "Our most popular choice for meditation enthusiasts",
                 features: [
-                  "All Monthly features",
-                  "42% savings vs monthly",
-                  "Priority support",
-                  "Early access to new features",
-                  "Exclusive guided journeys"
+                  "Unlimited AI meditations",
+                  "All voice options",
+                  "Advanced meditation creation",
+                  "All background sounds",
+                  "Download meditations",
+                  "New voices added monthly",
+                  "Voice customization"
                 ],
-                btnText: "Start Annual Plan",
+                btnText: `Start ${billingPeriod === "monthly" ? "Monthly" : "Annual"} Premium`,
                 popular: true,
                 delay: 100
               },
               {
                 name: "Lifetime",
                 price: "$199.99",
+                period: "one-time payment",
                 description: "One-time payment for unlimited access forever",
                 features: [
-                  "All Annual features",
+                  "All Premium features",
                   "Never pay again",
                   "Lifetime updates",
                   "VIP support",
-                  "Personalized meditation journey"
+                  "Personalized meditation journey",
+                  "Early access to new features"
                 ],
                 btnText: "Get Lifetime Access",
                 popular: false,
@@ -350,8 +374,8 @@ const Index = () => {
                     ))}
                   </ul>
                   <Link 
-                    to="/auth" 
-                    className={`w-full block text-center py-3 rounded-lg font-medium transition-all hover:scale-102 ${plan.popular ? 'bg-meditation-deep-blue text-white hover:bg-meditation-deep-blue/90' : 'bg-meditation-light-blue text-foreground hover:bg-meditation-light-blue/90'}`}
+                    to={plan.name === "Free" ? "/auth" : "/auth"} 
+                    className={`w-full block text-center py-3 rounded-lg font-medium transition-all hover:scale-102 ${plan.popular ? 'bg-meditation-deep-blue text-white hover:bg-meditation-deep-blue/90' : plan.name === "Free" ? 'border border-meditation-deep-blue text-meditation-deep-blue hover:bg-meditation-light-blue/20' : 'bg-meditation-light-blue text-foreground hover:bg-meditation-light-blue/90'}`}
                   >
                     {plan.btnText}
                   </Link>
@@ -362,7 +386,7 @@ const Index = () => {
 
           <div className="mt-12 text-center">
             <p className="text-sm text-foreground/60">
-              All plans include a 7-day money-back guarantee. No questions asked.
+              All paid plans include a 7-day money-back guarantee. No questions asked.
             </p>
           </div>
         </div>
@@ -445,7 +469,7 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="faq" className="py-20 px-4 bg-white">
+      <section className="py-20 px-4 bg-white">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
