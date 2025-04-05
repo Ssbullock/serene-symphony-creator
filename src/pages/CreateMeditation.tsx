@@ -164,7 +164,6 @@ const CreateMeditation = () => {
   const [progress, setProgress] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isAudioReady, setIsAudioReady] = useState(false);
-  const [, forceUpdate] = useState({});
 
   // Get random suggested titles
   const getRandomTitle = () => {
@@ -330,35 +329,42 @@ const CreateMeditation = () => {
       if (audioRef.current) {
         audioRef.current.pause();
         setIsPlaying(false);
+        audioRef.current = null;
       }
     } else {
       try {
-        let audio = audioRef.current;
+        // Get the background version URL if it's a Supabase URL
+        const audioUrl = generatedMeditation.audio_url;
+        const withBgUrl = audioUrl.includes('supabase.co') 
+          ? audioUrl.replace('.mp3', '_with_bg.mp3')
+          : audioUrl;
         
-        if (!audio) {
-          // Get the background version URL if it's a Supabase URL
-          const audioUrl = generatedMeditation.audio_url;
-          const withBgUrl = audioUrl.includes('supabase.co') 
-            ? audioUrl.replace('.mp3', '_with_bg.mp3')
-            : audioUrl;
-          
-          console.log(`Attempting to load audio: ${withBgUrl}`);
-          
-          try {
-            audio = await playAudio(withBgUrl);
-            setupAudioListeners(audio);
-          } catch (bgError) {
-            // Fallback to original version if background version fails
-            console.log('Background version failed, trying original:', audioUrl);
-            audio = await playAudio(audioUrl);
-            setupAudioListeners(audio);
-          }
+        console.log(`Attempting to load audio: ${withBgUrl}`);
+        
+        try {
+          const audio = await playAudio(withBgUrl);
+          audio.addEventListener('ended', () => {
+            setIsPlaying(false);
+            audioRef.current = null;
+          });
           
           audioRef.current = audio;
+          await audio.play();
+          setIsPlaying(true);
+        } catch (bgError) {
+          // Fallback to original version if background version fails
+          console.log('Background version failed, trying original:', audioUrl);
+          const audio = await playAudio(audioUrl);
+          
+          audio.addEventListener('ended', () => {
+            setIsPlaying(false);
+            audioRef.current = null;
+          });
+          
+          audioRef.current = audio;
+          await audio.play();
+          setIsPlaying(true);
         }
-        
-        await audio.play();
-        setIsPlaying(true);
       } catch (error) {
         console.error("Error playing audio:", error);
         toast({
@@ -370,39 +376,6 @@ const CreateMeditation = () => {
         audioRef.current = null;
       }
     }
-  };
-
-  // Add a helper function to setup audio event listeners
-  const setupAudioListeners = (audio: HTMLAudioElement) => {
-    // Remove any existing listeners first
-    audio.removeEventListener('timeupdate', handleTimeUpdate);
-    audio.removeEventListener('ended', handleAudioEnded);
-    audio.removeEventListener('loadedmetadata', handleMetadataLoaded);
-    
-    // Add the event listeners
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('ended', handleAudioEnded);
-    audio.addEventListener('loadedmetadata', handleMetadataLoaded);
-  };
-
-  // Add handlers for audio events
-  const handleTimeUpdate = () => {
-    const audio = audioRef.current;
-    if (audio && audio.duration) {
-      const currentProgress = (audio.currentTime / audio.duration) * 100;
-      setProgress(currentProgress);
-      // Force a re-render for the time display
-      forceUpdate({});
-    }
-  };
-
-  const handleAudioEnded = () => {
-    setIsPlaying(false);
-    setProgress(0);
-  };
-
-  const handleMetadataLoaded = () => {
-    setIsAudioReady(true);
   };
 
   // Update the handleSave function to ensure it works properly
@@ -788,21 +761,53 @@ const CreateMeditation = () => {
     if (!generatedMeditation) return;
     
     try {
+      // Create audio element with direct Supabase URL
       const audioUrl = generatedMeditation.audio_url;
       const withBgUrl = audioUrl.includes('supabase.co') 
         ? audioUrl.replace('.mp3', '_with_bg.mp3')
         : audioUrl;
       
       const audio = new Audio(withBgUrl);
-      setupAudioListeners(audio);
       
+      // Set up event listeners
+      audio.addEventListener('timeupdate', () => {
+        if (audio.duration) {
+          setProgress((audio.currentTime / audio.duration) * 100);
+        }
+      });
+      
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setProgress(0);
+      });
+      
+      audio.addEventListener('loadedmetadata', () => {
+        setIsAudioReady(true);
+      });
+
       audio.addEventListener('error', async (e) => {
         console.error('Error with background version, trying original:', e);
+        // Try the original version if background version fails
         const originalAudio = new Audio(audioUrl);
-        setupAudioListeners(originalAudio);
+        originalAudio.addEventListener('timeupdate', () => {
+          if (originalAudio.duration) {
+            setProgress((originalAudio.currentTime / originalAudio.duration) * 100);
+          }
+        });
+        
+        originalAudio.addEventListener('ended', () => {
+          setIsPlaying(false);
+          setProgress(0);
+        });
+        
+        originalAudio.addEventListener('loadedmetadata', () => {
+          setIsAudioReady(true);
+        });
+        
         audioRef.current = originalAudio;
       });
       
+      // Load the audio
       audioRef.current = audio;
       setLoadingMessage("");
     } catch (error) {
