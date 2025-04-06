@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { FcGoogle } from "react-icons/fc";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -95,20 +96,25 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-white">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-meditation-light-blue to-white">
       <div className="w-full max-w-md mx-auto">
         <div className="flex flex-col items-center mb-8">
-          <div className="h-20 w-20 mb-4 flex items-center justify-center rounded-full bg-blue-500 text-white text-2xl font-semibold">
+          <div className="h-20 w-20 mb-4 flex items-center justify-center rounded-full bg-primary text-white text-2xl font-semibold animate-float">
             S
           </div>
           <h1 className="text-3xl font-semibold tracking-wide text-gray-900 mb-2">Serene</h1>
           <p className="text-xl text-gray-600">Breathe in. Breathe out. Begin.</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
-          <h2 className="text-2xl font-semibold mb-6 text-center text-gray-900">
-            {isSignUp ? "Create an account" : "Welcome back"}
-          </h2>
+        <div className="bg-white/90 rounded-lg shadow-lg p-8 border border-gray-100 backdrop-blur-sm glass-card">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              {isSignUp ? "Create an account" : "Welcome back"}
+            </h2>
+            <Badge variant="secondary" className="bg-meditation-calm-blue/10 text-meditation-deep-blue">
+              {isSignUp ? "New User" : "Login"}
+            </Badge>
+          </div>
           
           <form onSubmit={handleSignUp} className="space-y-5">
             {isSignUp && (
@@ -121,7 +127,7 @@ const Auth = () => {
                   placeholder="Your name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="transition-all duration-300 focus:ring-blue-500 bg-white text-gray-800 placeholder:text-gray-500 border-gray-300"
+                  className="transition-all duration-300 focus:ring-primary bg-white text-gray-800 placeholder:text-gray-500 border-gray-200"
                 />
               </div>
             )}
@@ -135,7 +141,7 @@ const Auth = () => {
                 placeholder="your.email@example.com"
                 value={formData.email}
                 onChange={handleChange}
-                className="transition-all duration-300 focus:ring-blue-500 bg-white text-gray-800 placeholder:text-gray-500 border-gray-300"
+                className="transition-all duration-300 focus:ring-primary bg-white text-gray-800 placeholder:text-gray-500 border-gray-200"
               />
             </div>
             
@@ -148,14 +154,14 @@ const Auth = () => {
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
-                className="transition-all duration-300 focus:ring-blue-500 bg-white text-gray-800 placeholder:text-gray-500 border-gray-300"
+                className="transition-all duration-300 focus:ring-primary bg-white text-gray-800 placeholder:text-gray-500 border-gray-200"
               />
             </div>
             
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+              className="w-full py-3 px-4 btn-primary-gradient"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
@@ -171,7 +177,7 @@ const Auth = () => {
           
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-white text-gray-500 font-medium">
@@ -185,7 +191,7 @@ const Auth = () => {
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading}
             variant="outline"
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-gray-50 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-800 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-gray-50 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-800 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-300"
           >
             {isGoogleLoading ? (
               <svg className="animate-spin h-5 w-5 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -203,7 +209,7 @@ const Auth = () => {
           <div className="mt-6 text-center">
             <button 
               onClick={handleToggleMode} 
-              className="text-blue-600 hover:text-blue-800 hover:underline focus:outline-none transition-colors font-medium"
+              className="text-primary hover:text-primary/80 hover:underline focus:outline-none transition-colors font-medium"
             >
               {isSignUp ? "Already have an account? Log in" : "Need an account? Sign up"}
             </button>

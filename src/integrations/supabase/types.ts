@@ -72,6 +72,108 @@ export type Database = {
         }
         Relationships: []
       }
+      user_meditation_history: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          duration: number | null
+          id: string
+          meditation_id: string | null
+          notes: string | null
+          started_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          duration?: number | null
+          id?: string
+          meditation_id?: string | null
+          notes?: string | null
+          started_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          duration?: number | null
+          id?: string
+          meditation_id?: string | null
+          notes?: string | null
+          started_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_meditation_history_meditation_id_fkey"
+            columns: ["meditation_id"]
+            isOneToOne: false
+            referencedRelation: "meditations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_meditation_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          auth_id: string | null
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          id: string
+          last_login_at: string | null
+          meditation_count: number | null
+          name: string | null
+          preferences: Json | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string | null
+          subscription_updated_at: string | null
+          total_meditation_time: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          auth_id?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          last_login_at?: string | null
+          meditation_count?: number | null
+          name?: string | null
+          preferences?: Json | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
+          subscription_updated_at?: string | null
+          total_meditation_time?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          auth_id?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          last_login_at?: string | null
+          meditation_count?: number | null
+          name?: string | null
+          preferences?: Json | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
+          subscription_updated_at?: string | null
+          total_meditation_time?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
