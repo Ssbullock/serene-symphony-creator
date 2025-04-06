@@ -4,6 +4,7 @@ import { Play, ArrowRight, CheckCircle, ExternalLink, ChevronDown, ChevronUp, St
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Switch } from "@/components/ui/switch";
 
 const Index = () => {
   const [isVisible, setIsVisible] = useState({
@@ -12,6 +13,8 @@ const Index = () => {
     pricing: false,
     testimonials: false,
   });
+  
+  const [billingType, setBillingType] = useState<'monthly' | 'annual'>('monthly');
 
   const howItWorksRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
@@ -222,7 +225,7 @@ const Index = () => {
                 icon: (
                   <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center shadow-lg shadow-blue-200/50 animate-pulse-soft" style={{animationDelay: "0.6s"}}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                     </svg>
                   </div>
                 ),
@@ -234,7 +237,7 @@ const Index = () => {
                 icon: (
                   <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center shadow-lg shadow-blue-200/50 animate-pulse-soft" style={{animationDelay: "0.9s"}}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
                   </div>
                 ),
@@ -264,21 +267,50 @@ const Index = () => {
         </div>
         
         <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 relative inline-block">
               Pricing <span className="text-gradient animate-pulse-soft">Plans</span>
               <Sparkles className="absolute -right-6 -top-6 text-green-400 animate-pulse-soft" size={24} />
             </h2>
-            <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
+            <p className="text-lg text-foreground/70 max-w-2xl mx-auto mb-10">
               Choose the perfect plan for your meditation journey
             </p>
+            
+            <div className="flex items-center justify-center mb-8">
+              <span className={`mr-3 ${billingType === 'monthly' ? 'font-semibold text-meditation-deep-blue' : 'text-foreground/70'}`}>Monthly</span>
+              <Switch
+                checked={billingType === 'annual'}
+                onCheckedChange={() => setBillingType(billingType === 'monthly' ? 'annual' : 'monthly')}
+                className="mx-2"
+              />
+              <span className={`ml-3 ${billingType === 'annual' ? 'font-semibold text-meditation-deep-blue' : 'text-foreground/70'}`}>
+                Annual <span className="text-sm bg-green-100 text-green-800 px-2 py-0.5 rounded-full ml-1">20% off</span>
+              </span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[
               {
+                name: "Free",
+                price: "$0",
+                description: "Start your meditation journey",
+                features: [
+                  "3 AI meditations per month",
+                  "2 voice options",
+                  "Basic backgrounds",
+                  "5-minute maximum duration",
+                  "Community support"
+                ],
+                btnText: "Get Started Free",
+                popular: false,
+                delay: 0
+              },
+              {
                 name: "Monthly",
-                price: "$12.99",
+                price: billingType === 'monthly' ? "$9.99" : "$7.99",
+                period: billingType === 'monthly' ? "per month" : "per month, billed annually",
+                totalPrice: billingType === 'annual' ? "$95.88" : undefined,
                 description: "Perfect for those just starting their meditation journey",
                 features: [
                   "Unlimited AI meditations",
@@ -287,32 +319,33 @@ const Index = () => {
                   "Download meditations",
                   "New voices added monthly"
                 ],
-                btnText: "Start Monthly Plan",
+                btnText: "Start Your Plan",
                 popular: false,
-                delay: 0
-              },
-              {
-                name: "Annual",
-                price: "$74.99",
-                period: "per year",
-                description: "Our most popular choice with extra savings",
-                features: [
-                  "All Monthly features",
-                  "42% savings vs monthly",
-                  "Priority support",
-                  "Early access to new features",
-                  "Exclusive guided journeys"
-                ],
-                btnText: "Start Annual Plan",
-                popular: true,
                 delay: 100
               },
               {
+                name: "Premium",
+                price: billingType === 'monthly' ? "$19.99" : "$15.99",
+                period: billingType === 'monthly' ? "per month" : "per month, billed annually",
+                totalPrice: billingType === 'annual' ? "$191.88" : undefined,
+                description: "Our most popular choice with extra features",
+                features: [
+                  "All Monthly features",
+                  "Priority support",
+                  "Early access to new features",
+                  "Exclusive guided journeys",
+                  "Personalized recommendations"
+                ],
+                btnText: "Get Premium",
+                popular: true,
+                delay: 200
+              },
+              {
                 name: "Lifetime",
-                price: "$199.99",
+                price: "$99.99",
                 description: "One-time payment for unlimited access forever",
                 features: [
-                  "All Annual features",
+                  "All Premium features",
                   "Never pay again",
                   "Lifetime updates",
                   "VIP support",
@@ -320,7 +353,7 @@ const Index = () => {
                 ],
                 btnText: "Get Lifetime Access",
                 popular: false,
-                delay: 200
+                delay: 300
               }
             ].map((plan, index) => (
               <div 
@@ -335,16 +368,21 @@ const Index = () => {
                 )}
                 <div className="p-8">
                   <h3 className="text-xl font-semibold mb-4">{plan.name}</h3>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    {plan.period && <span className="text-foreground/70 ml-1">{plan.period}</span>}
+                  <div className="mb-1">
+                    <span className="text-3xl font-bold">{plan.price}</span>
+                    {plan.period && <span className="text-foreground/70 ml-1 text-sm">{plan.period}</span>}
                   </div>
-                  <p className="text-foreground/70 mb-6">{plan.description}</p>
+                  {plan.totalPrice && (
+                    <div className="mb-4 text-sm text-foreground/70">
+                      Total: {plan.totalPrice}
+                    </div>
+                  )}
+                  <p className="text-foreground/70 mb-6 text-sm">{plan.description}</p>
                   <hr className="my-6" />
                   <ul className="space-y-4 mb-8">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start">
-                        <CheckCircle size={20} className="text-meditation-deep-blue flex-shrink-0 mr-2 animate-pulse-soft" style={{animationDelay: `${i * 0.2}s`}} />
+                      <li key={i} className="flex items-start text-sm">
+                        <CheckCircle size={18} className="text-meditation-deep-blue flex-shrink-0 mr-2 animate-pulse-soft" style={{animationDelay: `${i * 0.2}s`}} />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -362,7 +400,7 @@ const Index = () => {
 
           <div className="mt-12 text-center">
             <p className="text-sm text-foreground/60">
-              All plans include a 7-day money-back guarantee. No questions asked.
+              All paid plans include a 7-day money-back guarantee. No questions asked.
             </p>
           </div>
         </div>
@@ -445,7 +483,7 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="faq" className="py-20 px-4 bg-white">
+      <section className="py-20 px-4 bg-white">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
