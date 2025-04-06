@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
 const Index = () => {
   const [isVisible, setIsVisible] = useState({
@@ -100,7 +101,7 @@ const Index = () => {
 
       <section id="how-it-works" ref={howItWorksRef} className="py-20 px-4 bg-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 overflow-hidden">
-          <div className="absolute top-1/5 left-1/4 h-32 w-32 rounded-full bg-blue-300 animate-float" style={{ animationDelay: "0.5s" }}></div>
+          <div className="absolute top-1/4 left-1/4 h-32 w-32 rounded-full bg-blue-300 animate-float" style={{ animationDelay: "0.5s" }}></div>
           <div className="absolute bottom-1/4 right-1/3 h-48 w-48 rounded-full bg-purple-200 animate-float" style={{ animationDelay: "1.2s" }}></div>
           <div className="absolute top-2/3 left-1/2 h-24 w-24 rounded-full bg-green-200 animate-breathe" style={{ animationDelay: "0.8s" }}></div>
         </div>
@@ -227,7 +228,7 @@ const Index = () => {
                 icon: (
                   <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center shadow-lg shadow-blue-200/50 animate-pulse-soft" style={{animationDelay: "0.6s"}}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                     </svg>
                   </div>
                 ),
@@ -279,28 +280,21 @@ const Index = () => {
             </p>
             
             <div className="flex justify-center items-center mb-10">
-              <div className="relative px-4 py-2 rounded-full bg-gray-100 flex items-center w-auto mx-auto">
-                <span className={`text-sm font-medium transition-colors duration-200 px-4 py-1 ${billingPeriod === "monthly" ? "text-white bg-meditation-deep-blue rounded-full" : "text-gray-700"}`}>
+              <div className="inline-flex items-center space-x-2">
+                <span className={`text-sm font-medium ${billingPeriod === "monthly" ? "text-meditation-deep-blue" : "text-gray-500"}`}>
                   Monthly
                 </span>
                 
-                <button 
-                  onClick={() => setBillingPeriod(prev => prev === "monthly" ? "annual" : "monthly")}
-                  className="mx-2 p-1 text-gray-700 hover:text-meditation-deep-blue transition-colors"
-                  aria-label="Toggle billing period"
-                >
-                  {billingPeriod === "monthly" ? 
-                    <ToggleLeft className="w-10 h-10" /> : 
-                    <ToggleRight className="w-10 h-10 text-meditation-deep-blue" />
-                  }
-                </button>
+                <Switch
+                  checked={billingPeriod === "annual"}
+                  onCheckedChange={(checked) => setBillingPeriod(checked ? "annual" : "monthly")}
+                  className="data-[state=checked]:bg-meditation-deep-blue"
+                />
                 
-                <span className={`text-sm font-medium transition-colors duration-200 px-4 py-1 flex items-center ${billingPeriod === "annual" ? "text-white bg-meditation-deep-blue rounded-full" : "text-gray-700"}`}>
+                <span className={`text-sm font-medium flex items-center gap-2 ${billingPeriod === "annual" ? "text-meditation-deep-blue" : "text-gray-500"}`}>
                   Annual
                   {billingPeriod === "annual" && (
-                    <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800">
-                      {annualDiscount}% off
-                    </Badge>
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{annualDiscount}% off</Badge>
                   )}
                 </span>
               </div>
@@ -487,3 +481,8 @@ const Index = () => {
           </div>
         </div>
       </section>
+    </div>
+  );
+};
+
+export default Index;
