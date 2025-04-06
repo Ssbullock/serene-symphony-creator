@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Play, ArrowRight, CheckCircle, ExternalLink, ChevronDown, ChevronUp, Star, Sparkles, BadgeDollarSign, BadgePercent, ToggleLeft, ToggleRight } from "lucide-react";
+import { Play, ArrowRight, CheckCircle, ExternalLink, ChevronDown, ChevronUp, Star, Sparkles, BadgeDollarSign, BadgePercent } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -294,7 +294,7 @@ const Index = () => {
                 <span className={`text-sm font-medium flex items-center gap-2 ${billingPeriod === "annual" ? "text-meditation-deep-blue" : "text-gray-500"}`}>
                   Annual
                   {billingPeriod === "annual" && (
-                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{annualDiscount}% off</Badge>
+                    <Badge variant="discount" className="animate-pulse-soft">Save {annualDiscount}%</Badge>
                   )}
                 </span>
               </div>
@@ -369,11 +369,13 @@ const Index = () => {
                 )}
                 <div className="p-8">
                   <h3 className="text-xl font-semibold mb-4">{plan.name}</h3>
-                  <div className="mb-4 flex items-center">
+                  <div className="mb-4 flex items-end">
                     <span className="text-4xl font-bold">{plan.price}</span>
-                    {plan.period && <span className="text-foreground/70 ml-1">{plan.period}</span>}
+                    {plan.period && <span className="text-foreground/70 ml-1 mb-1">{plan.period}</span>}
                     {plan.badge && (
-                      <Badge className="ml-3 bg-green-100 text-green-800 hover:bg-green-100">{plan.badge}</Badge>
+                      <div className="ml-3">
+                        <Badge variant="discount" className="animate-pulse-soft">Save {plan.name === "Lifetime" ? lifetimeDiscount : annualDiscount}%</Badge>
+                      </div>
                     )}
                   </div>
                   <p className="text-foreground/70 mb-6">{plan.description}</p>
@@ -481,6 +483,8 @@ const Index = () => {
           </div>
         </div>
       </section>
+      
+      <Footer />
     </div>
   );
 };
