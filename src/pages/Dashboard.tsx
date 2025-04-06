@@ -50,7 +50,7 @@ const Dashboard = () => {
         }
 
         // Cast the data to the Meditation type
-        setMeditations(data as unknown as Meditation[]);
+        setMeditations(data as Meditation[]);
       } catch (error) {
         console.error("Error in fetchMeditations:", error);
       } finally {

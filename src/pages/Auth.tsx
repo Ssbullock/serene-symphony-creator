@@ -95,29 +95,25 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-white">
       <div className="w-full max-w-md mx-auto">
         <div className="flex flex-col items-center mb-8">
-          {/* Animated logo - similar to homepage */}
-          <div className="relative h-20 w-20 mb-4">
-            <div className="absolute inset-0 bg-meditation-calm-blue rounded-full animate-breathe opacity-20"></div>
-            <div className="absolute inset-2 bg-meditation-calm-blue rounded-full animate-breathe opacity-40" style={{ animationDelay: "0.5s" }}></div>
-            <div className="absolute inset-4 bg-meditation-calm-blue rounded-full animate-breathe opacity-60" style={{ animationDelay: "1s" }}></div>
-            <div className="absolute inset-6 bg-meditation-calm-blue rounded-full animate-breathe opacity-80" style={{ animationDelay: "1.5s" }}></div>
+          <div className="h-20 w-20 mb-4 flex items-center justify-center rounded-full bg-blue-500 text-white text-2xl font-semibold">
+            S
           </div>
-          <h1 className="text-3xl font-semibold tracking-wide text-foreground mb-2">Serene</h1>
-          <p className="text-xl text-muted-foreground">Breathe in. Breathe out. Begin.</p>
+          <h1 className="text-3xl font-semibold tracking-wide text-gray-900 mb-2">Serene</h1>
+          <p className="text-xl text-gray-600">Breathe in. Breathe out. Begin.</p>
         </div>
 
-        <div className="glass-card rounded-lg shadow-lg p-8 border border-border">
-          <h2 className="text-2xl font-semibold mb-6 text-center text-foreground">
+        <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
+          <h2 className="text-2xl font-semibold mb-6 text-center text-gray-900">
             {isSignUp ? "Create an account" : "Welcome back"}
           </h2>
           
           <form onSubmit={handleSignUp} className="space-y-5">
             {isSignUp && (
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground font-medium">Full Name</Label>
+                <Label htmlFor="name" className="text-gray-800 font-medium">Full Name</Label>
                 <Input 
                   id="name"
                   name="name"
@@ -125,13 +121,13 @@ const Auth = () => {
                   placeholder="Your name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="transition-all duration-300 focus:ring-primary"
+                  className="transition-all duration-300 focus:ring-blue-500 bg-white text-gray-800 placeholder:text-gray-500 border-gray-300"
                 />
               </div>
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground font-medium">Email</Label>
+              <Label htmlFor="email" className="text-gray-800 font-medium">Email</Label>
               <Input 
                 id="email"
                 name="email"
@@ -139,12 +135,12 @@ const Auth = () => {
                 placeholder="your.email@example.com"
                 value={formData.email}
                 onChange={handleChange}
-                className="transition-all duration-300 focus:ring-primary"
+                className="transition-all duration-300 focus:ring-blue-500 bg-white text-gray-800 placeholder:text-gray-500 border-gray-300"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground font-medium">Password</Label>
+              <Label htmlFor="password" className="text-gray-800 font-medium">Password</Label>
               <Input 
                 id="password"
                 name="password"
@@ -152,14 +148,14 @@ const Auth = () => {
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
-                className="transition-all duration-300 focus:ring-primary"
+                className="transition-all duration-300 focus:ring-blue-500 bg-white text-gray-800 placeholder:text-gray-500 border-gray-300"
               />
             </div>
             
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full btn-primary"
+              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
@@ -175,10 +171,10 @@ const Auth = () => {
           
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
+              <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-background text-muted-foreground font-medium">
+              <span className="px-2 bg-white text-gray-500 font-medium">
                 Or continue with
               </span>
             </div>
@@ -189,10 +185,10 @@ const Auth = () => {
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading}
             variant="outline"
-            className="w-full btn-secondary flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-gray-50 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-800 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300"
           >
             {isGoogleLoading ? (
-              <svg className="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -207,7 +203,7 @@ const Auth = () => {
           <div className="mt-6 text-center">
             <button 
               onClick={handleToggleMode} 
-              className="text-primary hover:text-primary/80 hover:underline focus:outline-none transition-colors font-medium"
+              className="text-blue-600 hover:text-blue-800 hover:underline focus:outline-none transition-colors font-medium"
             >
               {isSignUp ? "Already have an account? Log in" : "Need an account? Sign up"}
             </button>
