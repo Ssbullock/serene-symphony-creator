@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Play, ArrowRight, CheckCircle, ExternalLink, ChevronDown, ChevronUp, Star, Sparkles, BadgeDollarSign, BadgePercent } from "lucide-react";
+import { Play, ArrowRight, CheckCircle, ExternalLink, ChevronDown, ChevronUp, Star, Sparkles, BadgeDollarSign, BadgePercent, ToggleLeft, ToggleRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
   const [isVisible, setIsVisible] = useState({
@@ -15,7 +15,8 @@ const Index = () => {
   });
 
   const [billingPeriod, setBillingPeriod] = useState("monthly");
-  const annualDiscount = 25; // 25% discount for annual billing
+  const annualDiscount = 40; // 40% discount for annual billing
+  const lifetimeDiscount = 60; // 60% discount for lifetime plan compared to paying monthly for 3 years
 
   const howItWorksRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
@@ -278,18 +279,31 @@ const Index = () => {
             </p>
             
             <div className="flex justify-center items-center mb-10">
-              <span className="text-sm font-medium mr-3">Monthly</span>
-              <ToggleGroup type="single" value={billingPeriod} onValueChange={(value) => value && setBillingPeriod(value)}>
-                <ToggleGroupItem value="monthly" aria-label="Toggle monthly billing" className="data-[state=on]:bg-meditation-deep-blue data-[state=on]:text-white">
+              <div className="relative px-4 py-2 rounded-full bg-gray-100 flex items-center w-auto mx-auto">
+                <span className={`text-sm font-medium transition-colors duration-200 px-4 py-1 ${billingPeriod === "monthly" ? "text-white bg-meditation-deep-blue rounded-full" : "text-gray-700"}`}>
                   Monthly
-                </ToggleGroupItem>
-                <ToggleGroupItem value="annual" aria-label="Toggle annual billing" className="data-[state=on]:bg-meditation-deep-blue data-[state=on]:text-white">
-                  Annual <BadgePercent size={14} className="ml-1" />
-                </ToggleGroupItem>
-              </ToggleGroup>
-              <span className="text-sm font-medium ml-3 flex items-center">
-                Annual <span className="ml-1 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">{annualDiscount}% off</span>
-              </span>
+                </span>
+                
+                <button 
+                  onClick={() => setBillingPeriod(prev => prev === "monthly" ? "annual" : "monthly")}
+                  className="mx-2 p-1 text-gray-700 hover:text-meditation-deep-blue transition-colors"
+                  aria-label="Toggle billing period"
+                >
+                  {billingPeriod === "monthly" ? 
+                    <ToggleLeft className="w-10 h-10" /> : 
+                    <ToggleRight className="w-10 h-10 text-meditation-deep-blue" />
+                  }
+                </button>
+                
+                <span className={`text-sm font-medium transition-colors duration-200 px-4 py-1 flex items-center ${billingPeriod === "annual" ? "text-white bg-meditation-deep-blue rounded-full" : "text-gray-700"}`}>
+                  Annual
+                  {billingPeriod === "annual" && (
+                    <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800">
+                      {annualDiscount}% off
+                    </Badge>
+                  )}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -298,7 +312,7 @@ const Index = () => {
               {
                 name: "Free",
                 price: "$0",
-                period: billingPeriod === "monthly" ? "forever" : "forever",
+                period: "forever",
                 description: "Perfect for getting started with meditation",
                 features: [
                   "Basic meditation generation",
@@ -313,7 +327,7 @@ const Index = () => {
               },
               {
                 name: "Premium",
-                price: billingPeriod === "monthly" ? "$9.99" : `$${Math.floor(9.99 * 12 * (1 - annualDiscount/100))}`,
+                price: billingPeriod === "monthly" ? "$9" : `$${Math.ceil(9 * 12 * (1 - annualDiscount/100))}`,
                 period: billingPeriod === "monthly" ? "per month" : "per year",
                 description: "Our most popular choice for meditation enthusiasts",
                 features: [
@@ -327,11 +341,12 @@ const Index = () => {
                 ],
                 btnText: `Start ${billingPeriod === "monthly" ? "Monthly" : "Annual"} Premium`,
                 popular: true,
+                badge: billingPeriod === "annual" ? `Save ${annualDiscount}%` : null,
                 delay: 100
               },
               {
                 name: "Lifetime",
-                price: "$199.99",
+                price: "$199",
                 period: "one-time payment",
                 description: "One-time payment for unlimited access forever",
                 features: [
@@ -344,6 +359,7 @@ const Index = () => {
                 ],
                 btnText: "Get Lifetime Access",
                 popular: false,
+                badge: `Save ${lifetimeDiscount}%`,
                 delay: 200
               }
             ].map((plan, index) => (
@@ -359,9 +375,12 @@ const Index = () => {
                 )}
                 <div className="p-8">
                   <h3 className="text-xl font-semibold mb-4">{plan.name}</h3>
-                  <div className="mb-4">
+                  <div className="mb-4 flex items-center">
                     <span className="text-4xl font-bold">{plan.price}</span>
                     {plan.period && <span className="text-foreground/70 ml-1">{plan.period}</span>}
+                    {plan.badge && (
+                      <Badge className="ml-3 bg-green-100 text-green-800 hover:bg-green-100">{plan.badge}</Badge>
+                    )}
                   </div>
                   <p className="text-foreground/70 mb-6">{plan.description}</p>
                   <hr className="my-6" />
@@ -468,74 +487,3 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      <section className="py-20 px-4 bg-white">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
-            <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
-              Find answers to common questions about our meditation platform
-            </p>
-          </div>
-
-          <Accordion type="single" collapsible className="w-full">
-            {[
-              {
-                question: "How does AI create personalized meditations?",
-                answer: "Our AI analyzes your preferences, goals, and meditation style to generate a unique script tailored to your needs. It then uses advanced text-to-speech technology to create a natural-sounding narration, which can be combined with your choice of background sounds."
-              },
-              {
-                question: "Can I download meditations for offline use?",
-                answer: "Yes! All meditation audio files can be downloaded and saved for offline listening. This is especially helpful for meditation during travel or in areas with limited connectivity."
-              },
-              {
-                question: "How many meditations can I create?",
-                answer: "All paid plans include unlimited meditation creation. You can generate as many different meditations as you need for various purposes - sleep, anxiety, focus, gratitude, and more."
-              },
-              {
-                question: "What types of meditation styles are available?",
-                answer: "We offer a wide range of meditation styles including mindfulness, breathwork, body scan, loving-kindness, visualization, and guided imagery. Each style can be customized to your specific needs and preferences."
-              },
-              {
-                question: "Do you offer refunds?",
-                answer: "Yes, we offer a 7-day money-back guarantee for all our plans. If you're not completely satisfied with your purchase, contact our support team for a full refund, no questions asked."
-              }
-            ].map((item, index) => (
-              <AccordionItem key={index} value={`item-${index}`} className="border-b border-gray-200 last:border-0">
-                <AccordionTrigger className="text-left py-5 hover:no-underline">
-                  <span className="font-medium text-lg">{item.question}</span>
-                </AccordionTrigger>
-                <AccordionContent className="text-foreground/70 pb-5">
-                  {item.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-
-          <div className="mt-12 text-center">
-            <p className="text-foreground/70 mb-4">Still have questions?</p>
-            <Link to="/contact" className="text-meditation-deep-blue hover:text-meditation-deep-blue/80 font-medium flex items-center justify-center">
-              Contact our support team <ExternalLink size={16} className="ml-2" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 px-4 bg-meditation-calm-blue/10">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to Transform Your Meditation Practice?</h2>
-          <p className="text-xl text-foreground/70 mb-8 max-w-2xl mx-auto">
-            Join thousands of users experiencing the benefits of AI-personalized meditation
-          </p>
-          <Link to="/auth" className="btn-primary text-base px-10 py-3 h-auto">
-            Get Started Now
-          </Link>
-        </div>
-      </section>
-
-      <Footer />
-    </div>
-  );
-};
-
-export default Index;
