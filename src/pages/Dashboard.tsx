@@ -34,6 +34,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string>('free');
 
   useEffect(() => {
     setSidebarOpen(!isMobile);
@@ -72,6 +73,30 @@ const Dashboard = () => {
     
     fetchMeditations();
   }, [user]);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('subscription_status')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        
+        if (data?.subscription_status) {
+          setSubscriptionStatus(data.subscription_status);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user?.id]);
 
   const filteredMeditations = meditations.filter(meditation => 
     meditation.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -384,7 +409,12 @@ const Dashboard = () => {
               <p className="text-sm font-medium">
                 {user?.user_metadata?.name || 'User'}
               </p>
-              <p className="text-xs text-foreground/60">Premium Plan</p>
+              <p className="text-xs text-foreground/60 capitalize">
+                {subscriptionStatus === 'free' ? 'Free Plan' : 
+                 subscriptionStatus === 'premium' ? 'Premium Plan' :
+                 subscriptionStatus === 'lifetime' ? 'Lifetime Plan' :
+                 'Free Plan'}
+              </p>
             </div>
           </div>
           

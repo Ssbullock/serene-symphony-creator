@@ -1,6 +1,5 @@
-
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -11,20 +10,34 @@ import { Badge } from "@/components/ui/badge";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
+  const mode = searchParams.get('mode');
+  
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(true);
+  const [isSignUp, setIsSignUp] = useState(mode !== 'login');
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     name: "",
   });
 
+  const getRedirectUrl = (email: string) => {
+    if (!redirectUrl) return null;
+    const baseUrl = decodeURIComponent(redirectUrl);
+    return `${baseUrl}?prefilled_email=${encodeURIComponent(email)}`;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleToggleMode = () => {
+    const newMode = isSignUp ? 'login' : 'signup';
+    const params = new URLSearchParams(searchParams);
+    params.set('mode', newMode);
+    navigate(`/auth?${params.toString()}`);
     setIsSignUp(!isSignUp);
   };
 
@@ -70,12 +83,42 @@ const Auth = () => {
             data: {
               name: formData.name,
             },
+            emailRedirectTo: undefined
           },
         });
         
         if (error) throw error;
         
-        toast.success("Account created! Please check your email for verification.");
+        if (data.user) {
+          const { error: profileError } = await supabase
+            .from('users')
+            .upsert([
+              {
+                id: data.user.id,
+                email: data.user.email,
+                name: formData.name,
+                auth_id: data.user.id,
+                last_login_at: new Date().toISOString(),
+              }
+            ], {
+              onConflict: 'id',
+              ignoreDuplicates: false,
+            });
+
+          if (profileError) {
+            console.error('Error creating user profile:', profileError);
+            throw profileError;
+          }
+        }
+        
+        toast.success("Account created successfully!");
+        
+        const finalRedirectUrl = getRedirectUrl(formData.email);
+        if (finalRedirectUrl) {
+          window.location.href = finalRedirectUrl;
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email: formData.email,
@@ -85,7 +128,13 @@ const Auth = () => {
         if (error) throw error;
         
         toast.success("Logged in successfully!");
-        navigate("/dashboard");
+        
+        const finalRedirectUrl = getRedirectUrl(formData.email);
+        if (finalRedirectUrl) {
+          window.location.href = finalRedirectUrl;
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "Authentication failed");
@@ -99,8 +148,11 @@ const Auth = () => {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-meditation-light-blue to-white">
       <div className="w-full max-w-md mx-auto">
         <div className="flex flex-col items-center mb-8">
-          <div className="h-20 w-20 mb-4 flex items-center justify-center rounded-full bg-primary text-white text-2xl font-semibold animate-float">
-            S
+          <div className="relative h-20 w-20 mb-4">
+            <div className="absolute inset-0 bg-meditation-calm-blue rounded-full animate-breathe opacity-20"></div>
+            <div className="absolute inset-2 bg-meditation-calm-blue rounded-full animate-breathe opacity-40" style={{ animationDelay: "0.5s" }}></div>
+            <div className="absolute inset-4 bg-meditation-calm-blue rounded-full animate-breathe opacity-60" style={{ animationDelay: "1s" }}></div>
+            <div className="absolute inset-6 bg-meditation-calm-blue rounded-full animate-breathe opacity-80" style={{ animationDelay: "1.5s" }}></div>
           </div>
           <h1 className="text-3xl font-semibold tracking-wide text-gray-900 mb-2">Serene</h1>
           <p className="text-xl text-gray-600">Breathe in. Breathe out. Begin.</p>

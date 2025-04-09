@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, CheckCircle, CreditCard, User, Bell, Shield, HelpCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, CreditCard, User, Bell, Shield, HelpCircle, ExternalLink } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Settings = () => {
@@ -14,6 +13,13 @@ const Settings = () => {
   const { toast } = useToast();
   const [currentPlan, setCurrentPlan] = useState("monthly"); // Assume default is monthly
   const isMobile = useIsMobile();
+
+  const getPortalUrl = () => {
+    const baseUrl = 'https://billing.stripe.com/p/login/test_14k3cWagG6zz1S8fYY';
+    const email = user?.email;
+    if (!email) return baseUrl;
+    return `${baseUrl}?prefilled_email=${encodeURIComponent(email)}`;
+  };
 
   const handleUpgrade = (plan: string) => {
     // In a real app, this would trigger a payment flow
@@ -68,106 +74,18 @@ const Settings = () => {
                     Manage your subscription plan and billing information
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-2">Current Plan</h3>
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-                        <div>
-                          <p className="font-medium text-lg">Monthly Plan</p>
-                          <p className="text-foreground/70">$12.99 per month</p>
-                          <p className="text-sm text-foreground/50 mt-1">Next billing date: November 15, 2023</p>
-                        </div>
-                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center self-start md:self-center">
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Active
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Upgrade Your Plan</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Card className="border-2 border-meditation-deep-blue">
-                        <CardHeader className="pb-2">
-                          <CardTitle>Annual Plan</CardTitle>
-                          <CardDescription>Save 42% compared to monthly</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-2xl font-bold">$74.99<span className="text-sm font-normal text-foreground/70">/year</span></p>
-                          <ul className="mt-4 space-y-2">
-                            <li className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                              <span>All Monthly features</span>
-                            </li>
-                            <li className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                              <span>Priority support</span>
-                            </li>
-                            <li className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                              <span>Early access to new features</span>
-                            </li>
-                          </ul>
-                        </CardContent>
-                        <CardFooter>
-                          <Button 
-                            onClick={() => handleUpgrade("annual")} 
-                            className="w-full bg-meditation-deep-blue hover:bg-meditation-deep-blue/90"
-                          >
-                            Upgrade to Annual
-                          </Button>
-                        </CardFooter>
-                      </Card>
-
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle>Lifetime Access</CardTitle>
-                          <CardDescription>One-time payment, forever access</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-2xl font-bold">$199.99<span className="text-sm font-normal text-foreground/70"> one-time</span></p>
-                          <ul className="mt-4 space-y-2">
-                            <li className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                              <span>All Annual features</span>
-                            </li>
-                            <li className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                              <span>Never pay again</span>
-                            </li>
-                            <li className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                              <span>VIP support</span>
-                            </li>
-                          </ul>
-                        </CardContent>
-                        <CardFooter>
-                          <Button 
-                            onClick={() => handleUpgrade("lifetime")} 
-                            variant="outline"
-                            className="w-full border-meditation-deep-blue text-meditation-deep-blue hover:bg-meditation-light-blue/20"
-                          >
-                            Get Lifetime Access
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col items-start">
+                <CardContent className="flex flex-col items-center py-8">
                   <Button 
-                    onClick={handleCancel}
-                    variant="link" 
-                    className="text-red-500 hover:text-red-600 px-0 h-auto font-normal"
+                    onClick={() => window.location.href = getPortalUrl()}
+                    className="flex items-center gap-2 bg-meditation-deep-blue hover:bg-meditation-deep-blue/90 text-white px-6 py-3"
                   >
-                    Cancel subscription
+                    <ExternalLink size={18} />
+                    Manage Subscription
                   </Button>
-                  <p className="text-sm text-foreground/50 mt-1">
-                    Your subscription will remain active until the end of your current billing period.
+                  <p className="text-sm text-foreground/60 mt-4 text-center max-w-md">
+                    Click above to access the customer portal where you can manage your subscription, view billing history, and update payment methods.
                   </p>
-                </CardFooter>
+                </CardContent>
               </Card>
             </TabsContent>
 

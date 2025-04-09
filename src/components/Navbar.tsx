@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
@@ -24,6 +23,14 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setIsOpen(false);
+    }
+  };
+
   const navbarClass = transparent && !scrolled && !isOpen 
     ? "bg-transparent" 
     : "bg-white bg-opacity-80 backdrop-blur-md shadow-sm";
@@ -45,19 +52,28 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-8 items-center">
-            <Link to="/" className="nav-link text-foreground/80 hover:text-foreground transition-colors">
+            <button 
+              onClick={() => scrollToSection('home')}
+              className="nav-link text-foreground/80 hover:text-foreground transition-colors"
+            >
               Home
-            </Link>
-            <Link to="#how-it-works" className="nav-link text-foreground/80 hover:text-foreground transition-colors">
+            </button>
+            <button 
+              onClick={() => scrollToSection('how-it-works')}
+              className="nav-link text-foreground/80 hover:text-foreground transition-colors"
+            >
               How It Works
-            </Link>
-            <Link to="#pricing" className="nav-link text-foreground/80 hover:text-foreground transition-colors">
+            </button>
+            <button 
+              onClick={() => scrollToSection('pricing')}
+              className="nav-link text-foreground/80 hover:text-foreground transition-colors"
+            >
               Pricing
-            </Link>
-            <Link to="/auth" className="btn-secondary">
+            </button>
+            <Link to="/auth?mode=login" className="btn-secondary">
               Login
             </Link>
-            <Link to="/auth" className="btn-primary">
+            <Link to="/auth?mode=signup" className="btn-primary-gradient">
               Sign up
             </Link>
           </div>
@@ -77,38 +93,35 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
         {isOpen && (
           <div className="md:hidden bg-white animate-fade-in">
             <div className="flex flex-col space-y-4 py-4 px-4">
-              <Link 
-                to="/" 
-                className="text-foreground/80 hover:text-foreground py-2"
-                onClick={() => setIsOpen(false)}
+              <button 
+                onClick={() => scrollToSection('home')}
+                className="text-foreground/80 hover:text-foreground py-2 text-left"
               >
                 Home
-              </Link>
-              <Link 
-                to="#how-it-works" 
-                className="text-foreground/80 hover:text-foreground py-2"
-                onClick={() => setIsOpen(false)}
+              </button>
+              <button 
+                onClick={() => scrollToSection('how-it-works')}
+                className="text-foreground/80 hover:text-foreground py-2 text-left"
               >
                 How It Works
-              </Link>
-              <Link 
-                to="#pricing" 
-                className="text-foreground/80 hover:text-foreground py-2"
-                onClick={() => setIsOpen(false)}
+              </button>
+              <button 
+                onClick={() => scrollToSection('pricing')}
+                className="text-foreground/80 hover:text-foreground py-2 text-left"
               >
                 Pricing
-              </Link>
+              </button>
               <div className="flex flex-col space-y-3 pt-2">
                 <Link 
-                  to="/auth" 
+                  to="/auth?mode=login" 
                   className="btn-secondary w-full justify-center"
                   onClick={() => setIsOpen(false)}
                 >
                   Login
                 </Link>
                 <Link 
-                  to="/auth" 
-                  className="btn-primary w-full justify-center"
+                  to="/auth?mode=signup" 
+                  className="btn-primary-gradient w-full justify-center"
                   onClick={() => setIsOpen(false)}
                 >
                   Sign up

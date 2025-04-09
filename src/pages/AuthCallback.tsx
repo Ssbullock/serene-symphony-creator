@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingScreen from '@/components/LoadingScreen';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -26,6 +28,33 @@ const AuthCallback = () => {
             if (error) throw error;
             
             if (session) {
+              // Create user record in Supabase if it doesn't exist
+              const { error: profileError } = await supabase
+                .from('users')
+                .upsert([
+                  {
+                    id: session.user.id,
+                    email: session.user.email,
+                    name: session.user.user_metadata.name || session.user.email?.split('@')[0],
+                    auth_id: session.user.id,
+                    last_login_at: new Date().toISOString(),
+                  }
+                ], {
+                  onConflict: 'id',
+                  ignoreDuplicates: false,
+                });
+
+              if (profileError) {
+                console.error('Error upserting user profile:', profileError);
+              }
+
+              // Redirect to payment link if available, otherwise to dashboard
+              if (redirectUrl && session.user.email) {
+                const baseUrl = decodeURIComponent(redirectUrl);
+                window.location.href = `${baseUrl}?prefilled_email=${encodeURIComponent(session.user.email)}`;
+                return;
+              }
+              
               navigate('/dashboard');
               return;
             }
@@ -37,7 +66,12 @@ const AuthCallback = () => {
         if (error) throw error;
         
         if (session) {
-          navigate('/dashboard');
+          if (redirectUrl && session.user.email) {
+            const baseUrl = decodeURIComponent(redirectUrl);
+            window.location.href = `${baseUrl}?prefilled_email=${encodeURIComponent(session.user.email)}`;
+          } else {
+            navigate('/dashboard');
+          }
         } else {
           navigate('/auth');
         }
@@ -48,7 +82,7 @@ const AuthCallback = () => {
     };
 
     handleCallback();
-  }, [navigate]);
+  }, [navigate, redirectUrl]);
 
   return <LoadingScreen />;
 };
