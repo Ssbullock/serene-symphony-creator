@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Switch } from "@/components/ui/switch";
+import { useUser } from '@/hooks/use-user';
 
 const PAYMENT_LINKS = {
   premium_monthly: 'https://buy.stripe.com/test_bIYg0X9EG9pTgZqfYY',
@@ -15,6 +16,7 @@ const PAYMENT_LINKS = {
 type PlanType = keyof typeof PAYMENT_LINKS;
 
 const Index = () => {
+  const { user } = useUser();
   const [isVisible, setIsVisible] = useState({
     howItWorks: false,
     features: false,
@@ -59,8 +61,11 @@ const Index = () => {
 
   const handleSubscribe = async (plan: PlanType) => {
     try {
+      const userId = user?.id; // Get the user ID from the current user
       localStorage.setItem('selectedPlan', plan);
-      window.location.href = `/auth?redirect=${encodeURIComponent(PAYMENT_LINKS[plan])}`;
+      const paymentLink = PAYMENT_LINKS[plan];
+      const redirectUrl = `/auth?redirect=${encodeURIComponent(paymentLink)}&client_reference_id=${userId}`;
+      window.location.href = redirectUrl;
     } catch (error) {
       console.error('Error handling subscription:', error);
     }
