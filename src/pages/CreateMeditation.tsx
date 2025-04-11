@@ -178,7 +178,7 @@ const CreateMeditation = () => {
     if (isGenerating) {
       // Set a safety timeout to clear the loading state if it gets stuck
       // Use a longer timeout for longer meditations
-      const timeoutDuration = parseInt(duration) >= 20 ? 180000 : 90000; // 3 minutes for long meditations, 1.5 minutes for shorter ones
+      const timeoutDuration = parseInt(duration) >= 20 ? 468000 : 234000; // 7.8 minutes for long meditations, 3.9 minutes for shorter ones
       
       timeoutId = window.setTimeout(() => {
         if (isGenerating) {
@@ -229,32 +229,41 @@ const CreateMeditation = () => {
       console.log("Using session ID:", newSessionId);
       
       // Step 1: Generate the meditation script
+      const scriptStartTime = performance.now();
       setLoadingMessage("Generating meditation script...");
       const scriptData = await api.post('/api/generate-script', {
         style,
         duration,
         goals
       });
+      const scriptEndTime = performance.now();
+      console.log(`Script generation took ${((scriptEndTime - scriptStartTime) / 1000).toFixed(2)} seconds`);
       
       setGeneratedScript(scriptData.script);
       
       // Step 2: Generate TTS audio files
+      const ttsStartTime = performance.now();
       setLoadingMessage("Generating voice audio...");
       const ttsData = await api.post('/api/generate-tts', {
         script: scriptData.script,
         voice,
         sessionId: newSessionId
       });
+      const ttsEndTime = performance.now();
+      console.log(`TTS generation took ${((ttsEndTime - ttsStartTime) / 1000).toFixed(2)} seconds`);
       
       console.log("TTS response:", ttsData);
       
       // Step 3: Process the audio files
+      const audioStartTime = performance.now();
       setLoadingMessage("Processing audio and adding background music...");
       const processedData = await api.post('/api/process-audio', {
         sessionId: newSessionId,
         audioFiles: ttsData.audioFiles,
         background: background === 'none' ? null : background
       });
+      const audioEndTime = performance.now();
+      console.log(`Audio processing took ${((audioEndTime - audioStartTime) / 1000).toFixed(2)} seconds`);
       
       console.log("Process audio response:", processedData);
       
@@ -278,6 +287,14 @@ const CreateMeditation = () => {
       // Move to the final step only after successful processing
       setStep(7);
       setIsGenerating(false);
+      
+      // Log total generation time
+      const totalTime = performance.now() - scriptStartTime;
+      console.log(`Total meditation generation took ${(totalTime / 1000).toFixed(2)} seconds`);
+      console.log("Generation breakdown:");
+      console.log(`- Script generation: ${((scriptEndTime - scriptStartTime) / 1000).toFixed(2)} seconds (${(((scriptEndTime - scriptStartTime) / totalTime) * 100).toFixed(1)}%)`);
+      console.log(`- TTS generation: ${((ttsEndTime - ttsStartTime) / 1000).toFixed(2)} seconds (${(((ttsEndTime - ttsStartTime) / totalTime) * 100).toFixed(1)}%)`);
+      console.log(`- Audio processing: ${((audioEndTime - audioStartTime) / 1000).toFixed(2)} seconds (${(((audioEndTime - audioStartTime) / totalTime) * 100).toFixed(1)}%)`);
       
     } catch (error) {
       console.error("Error creating meditation:", error);

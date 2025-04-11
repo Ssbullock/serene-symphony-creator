@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/use-user";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
+import api from '@/lib/api';
 
 interface Meditation {
   id: string;
@@ -88,7 +89,7 @@ const Dashboard = () => {
         if (error) throw error;
         
         if (data?.subscription_status) {
-          setSubscriptionStatus(data.subscription_status);
+          setSubscriptionStatus(data.subscription_status as string);
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -265,8 +266,7 @@ const Dashboard = () => {
 
   const handleDelete = async (meditationId: string) => {
     try {
-      setLoading(true);
-      
+      // First delete from Supabase
       const { error: supabaseError } = await supabase
         .from('meditations')
         .delete()
@@ -277,14 +277,9 @@ const Dashboard = () => {
         throw new Error('Failed to delete meditation from database');
       }
       
-      const response = await fetch('http://localhost:3000/api/delete-meditation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          meditationId
-        }),
+      // Then call the API to delete the audio files
+      const response = await api.post('/api/delete-meditation', {
+        meditationId
       });
       
       if (!response.ok) {
