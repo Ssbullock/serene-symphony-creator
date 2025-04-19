@@ -442,7 +442,7 @@ const Dashboard = () => {
                 <p className="text-foreground/70 mt-1">Your meditation journey continues</p>
               </div>
               <div className="mt-4 md:mt-0">
-                <Link to="/create" className="btn-primary flex items-center animate-pulse-soft">
+                <Link to="/create" className="btn-primary-gradient flex items-center">
                   <Plus size={18} className="mr-2" />
                   Create Meditation
                 </Link>
