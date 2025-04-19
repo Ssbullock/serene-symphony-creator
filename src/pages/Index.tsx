@@ -123,6 +123,40 @@ const Index = () => {
         </div>
       </section>
 
+      <section className="py-20 px-4 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 overflow-hidden">
+          <div className="absolute top-1/4 left-1/3 h-48 w-48 rounded-full bg-blue-200 animate-float-slow"></div>
+          <div className="absolute bottom-1/3 right-1/4 h-64 w-64 rounded-full bg-purple-200 animate-float-slow" style={{animationDelay: "1.5s"}}></div>
+        </div>
+        
+        <div className="container mx-auto max-w-6xl relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 relative inline-block">
+              Beautiful <span className="text-gradient animate-pulse-soft">Experience</span>
+              <Sparkles className="absolute -right-6 -top-6 text-blue-400 animate-pulse-soft" size={24} />
+            </h2>
+            <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
+              Designed with care for the perfect meditation journey
+            </p>
+          </div>
+
+          <div className="relative">
+            <div className="flex justify-center items-center gap-4 md:gap-8">
+              <img 
+                src="/lovable-uploads/5afb2b1f-aa2a-42a3-bb63-955ccda6c753.png" 
+                alt="Meditation App Interface" 
+                className="w-full max-w-3xl transform hover:scale-105 transition-transform duration-700 hover:rotate-1"
+              />
+            </div>
+
+            <div className="absolute -z-10 inset-0 blur-3xl opacity-20">
+              <div className="absolute top-1/2 left-1/4 w-32 h-32 bg-blue-400 rounded-full"></div>
+              <div className="absolute bottom-1/4 right-1/3 w-40 h-40 bg-purple-400 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="how-it-works" ref={howItWorksRef} className="py-20 px-4 bg-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 overflow-hidden">
           <div className="absolute top-1/5 left-1/4 h-32 w-32 rounded-full bg-blue-300 animate-float" style={{ animationDelay: "0.5s" }}></div>
@@ -173,7 +207,7 @@ const Index = () => {
                 icon: (
                   <div className="mb-6 inline-flex items-center justify-center h-16 w-16 rounded-full bg-meditation-light-blue text-meditation-deep-blue animate-breathe" style={{ animationDelay: "2s" }}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm-12-6l12-3" />
                     </svg>
                   </div>
                 ),
@@ -264,7 +298,7 @@ const Index = () => {
                 icon: (
                   <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center shadow-lg shadow-blue-200/50 animate-pulse-soft" style={{animationDelay: "0.9s"}}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
                   </div>
                 ),
