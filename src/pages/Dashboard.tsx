@@ -1,7 +1,8 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, ChevronRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -333,7 +334,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen flex bg-meditation-tranquil">
       <button 
-        onClick={() => isMobile && setSidebarOpen(false)}
+        onClick={() => setSidebarOpen(!sidebarOpen)}
         className="md:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-md shadow-md"
         aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
       >
