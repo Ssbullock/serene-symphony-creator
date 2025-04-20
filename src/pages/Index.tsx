@@ -13,7 +13,7 @@ const Index = () => {
     features: false,
     pricing: false,
   });
-  
+
   const howItWorksRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
   const pricingRef = useRef<HTMLDivElement>(null);
@@ -48,13 +48,13 @@ const Index = () => {
       <HeroSection />
       <div ref={howItWorksRef}>
         <HowItWorks isVisible={isVisible.howItWorks} />
-      </div>
+            </div>
       <div ref={featuresRef}>
         <Features isVisible={isVisible.features} />
-      </div>
+          </div>
       <div ref={pricingRef}>
         <PricingSection isVisible={isVisible.pricing} />
-      </div>
+        </div>
       <Footer />
     </div>
   );
