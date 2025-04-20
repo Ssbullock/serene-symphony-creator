@@ -1,467 +1,598 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import type { Meditation } from '@/types/meditation';
-import {
-  ChevronRight,
-  Copy,
-  Edit,
-  Loader2,
-  MoreVertical,
-  Plus,
-  Trash,
-  Waves,
-} from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/components/ui/use-toast';
-import { useUser } from '@/hooks/use-user';
-import { cn } from '@/lib/utils';
-import { generateMeditation } from '@/utils/openai';
-import { Skeleton } from "@/components/ui/skeleton"
 
-interface MeditationFormValues {
+import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
+import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, ChevronRight } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/lib/supabase";
+import { useUser } from "@/hooks/use-user";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { formatDistanceToNow } from "date-fns";
+import api from '@/lib/api';
+
+interface Meditation {
+  id: string;
   title: string;
   duration: number;
   style: string;
-  backgroundSound: string;
-  voiceId: string;
-  script: string;
+  audio_url: string;
+  created_at: string;
+  background: string;
+  voice: string;
 }
 
 const Dashboard = () => {
   const [meditations, setMeditations] = useState<Meditation[]>([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formValues, setFormValues] = useState<MeditationFormValues>({
-    title: '',
-    duration: 5,
-    style: 'Mindfulness',
-    backgroundSound: 'Ocean Waves',
-    voiceId: '1',
-    script: '',
-  });
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-  const { user } = useUser();
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string>('free');
+
+  useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
+
+  const firstName = user?.user_metadata?.name?.split(' ')[0] || 'there';
 
   useEffect(() => {
     const fetchMeditations = async () => {
-      const { data, error } = await supabase
-        .from('meditations')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('meditations')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        setMeditations(data || []);
+      } catch (error) {
         console.error('Error fetching meditations:', error);
-        return;
+        toast({
+          title: "Error",
+          description: "Failed to load your meditations",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
       }
+    };
+    
+    fetchMeditations();
+  }, [user]);
 
-      setMeditations(data as Meditation[]);
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('subscription_status')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        
+        if (data?.subscription_status) {
+          setSubscriptionStatus(data.subscription_status as string);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
     };
 
-    fetchMeditations();
-  }, []);
+    fetchUserProfile();
+  }, [user?.id]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormValues({
-      ...formValues,
-      [name]: value,
+  const filteredMeditations = meditations.filter(meditation => 
+    meditation.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const loadAudio = async (url: string): Promise<HTMLAudioElement> => {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio(url);
+      
+      const onCanPlay = () => {
+        audio.removeEventListener('canplaythrough', onCanPlay);
+        audio.removeEventListener('error', onError);
+        resolve(audio);
+      };
+      
+      const onError = (e: Event) => {
+        audio.removeEventListener('canplaythrough', onCanPlay);
+        audio.removeEventListener('error', onError);
+        reject(new Error(`Failed to load audio: ${(e as ErrorEvent).message}`));
+      };
+      
+      audio.addEventListener('canplaythrough', onCanPlay);
+      audio.addEventListener('error', onError);
+      
+      const timeout = setTimeout(() => {
+        audio.removeEventListener('canplaythrough', onCanPlay);
+        audio.removeEventListener('error', onError);
+        reject(new Error('Audio loading timed out'));
+      }, 10000);
+      
+      audio.load();
+      
+      audio.addEventListener('canplaythrough', () => clearTimeout(timeout));
+      audio.addEventListener('error', () => clearTimeout(timeout));
     });
   };
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormValues({
-      ...formValues,
-      [name]: value,
-    });
+  const handlePlayPause = async (id: string, audioUrl: string) => {
+    if (playingId === id) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setPlayingId(null);
+        audioRef.current = null;
+      }
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      
+      if (!audioUrl) {
+        console.error("Audio URL is missing for meditation:", id);
+        toast({
+          title: "Playback Error",
+          description: "Audio URL is missing for this meditation.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      try {
+        // Try playing with background audio first, but only append _with_bg if not already present
+        const withBgUrl = audioUrl.includes('supabase.co') 
+          ? audioUrl.includes('_with_bg.mp3') 
+            ? audioUrl 
+            : audioUrl.replace('.mp3', '_with_bg.mp3')
+          : audioUrl;
+        
+        console.log(`Attempting to load audio: ${withBgUrl}`);
+        
+        try {
+          const audio = await loadAudio(withBgUrl);
+          audio.addEventListener('ended', () => {
+            setPlayingId(null);
+            audioRef.current = null;
+          });
+          
+          audioRef.current = audio;
+          await audio.play();
+          setPlayingId(id);
+        } catch (bgError) {
+          // Fallback to original version if background version fails
+          console.log('Background version failed, trying original:', audioUrl);
+          const audio = await loadAudio(audioUrl);
+          
+          audio.addEventListener('ended', () => {
+            setPlayingId(null);
+            audioRef.current = null;
+          });
+          
+          audioRef.current = audio;
+          await audio.play();
+          setPlayingId(id);
+        }
+      } catch (error) {
+        console.error("Error playing audio:", error);
+        toast({
+          title: "Playback Error",
+          description: error instanceof Error ? error.message : "Failed to play meditation audio",
+          variant: "destructive"
+        });
+        setPlayingId(null);
+        audioRef.current = null;
+      }
+    }
   };
 
-  const generateScript = async () => {
-    setIsGenerating(true);
+  const handleDownload = async (meditation: Meditation) => {
     try {
-      const script = await generateMeditation(formValues);
-      setFormValues({
-        ...formValues,
-        script: script || '',
+      setLoading(true);
+      
+      const withBgUrl = meditation.audio_url.includes('supabase.co') 
+        ? meditation.audio_url.includes('_with_bg.mp3')
+          ? meditation.audio_url
+          : meditation.audio_url.replace('.mp3', '_with_bg.mp3')
+        : meditation.audio_url;
+      
+      const downloadFile = async (url: string, fallbackUrl?: string) => {
+        try {
+          const checkResponse = await fetch(url, { method: 'HEAD' });
+          
+          if (checkResponse.ok) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${meditation.title || 'Meditation'}.mp3`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            return true;
+          } else if (fallbackUrl) {
+            console.log(`File not found at ${url}, trying fallback...`);
+            return downloadFile(fallbackUrl);
+          }
+          return false;
+        } catch (error) {
+          console.error(`Error downloading from ${url}:`, error);
+          if (fallbackUrl) {
+            console.log('Trying fallback URL...');
+            return downloadFile(fallbackUrl);
+          }
+          return false;
+        }
+      };
+      
+      const downloaded = await downloadFile(withBgUrl, meditation.audio_url);
+      
+      if (downloaded) {
+        toast({
+          title: "Download Started",
+          description: "Your meditation is being downloaded",
+          variant: "default"
+        });
+      } else {
+        throw new Error("Could not download meditation file");
+      }
+    } catch (error) {
+      console.error('Error downloading meditation:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download meditation. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (meditationId: string) => {
+    try {
+      // First delete from Supabase
+      const { error: supabaseError } = await supabase
+        .from('meditations')
+        .delete()
+        .eq('id', meditationId);
+      
+      if (supabaseError) {
+        console.error('Error deleting from Supabase:', supabaseError);
+        throw new Error('Failed to delete meditation from database');
+      }
+      
+      // Then call the API to delete the audio files
+      const response = await api.post('/api/delete-meditation', {
+        meditationId
+      });
+      
+      if (!response.ok) {
+        console.warn(`Delete files request failed with status ${response.status}`);
+      }
+      
+      setMeditations(meditations.filter(m => m.id !== meditationId));
+      
+      toast({
+        title: "Meditation Deleted",
+        description: "Your meditation has been permanently deleted.",
+        variant: "default"
+      });
+      
+    } catch (error) {
+      console.error('Error deleting meditation:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete meditation. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCreationDate = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (e) {
+      return "Recently";
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account."
       });
     } catch (error) {
-      console.error('Error generating script:', error);
       toast({
-        title: 'Error generating script',
-        description: 'Please try again.',
-        variant: 'destructive',
+        title: "Error logging out",
+        description: "There was a problem logging you out. Please try again.",
+        variant: "destructive"
       });
-    } finally {
-      setIsGenerating(false);
     }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      const { data, error } = await supabase.from('meditations').insert([
-        {
-          ...formValues,
-          userId: user.id,
-        },
-      ]);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      setMeditations((prevMeditations) => [
-        {
-          id: data![0].id,
-          title: formValues.title,
-          duration: formValues.duration,
-          style: formValues.style,
-          backgroundSound: formValues.backgroundSound,
-          voiceId: formValues.voiceId,
-          script: formValues.script,
-          createdAt: new Date().toISOString(),
-          userId: user.id,
-        },
-        ...prevMeditations,
-      ]);
-
-      toast({
-        title: 'Success',
-        description: 'Meditation saved successfully.',
-      });
-
-      setIsSidebarOpen(false);
-      setFormValues({
-        title: '',
-        duration: 5,
-        style: 'Mindfulness',
-        backgroundSound: 'Ocean Waves',
-        voiceId: '1',
-        script: '',
-      });
-    } catch (error: any) {
-      console.error('Error saving meditation:', error.message);
-      toast({
-        title: 'Error',
-        description: 'Failed to save meditation. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    setIsFetching(true);
-    try {
-      const { error } = await supabase.from('meditations').delete().eq('id', id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      setMeditations((prevMeditations) => prevMeditations.filter((meditation) => meditation.id !== id));
-
-      toast({
-        title: 'Success',
-        description: 'Meditation deleted successfully.',
-      });
-    } catch (error: any) {
-      console.error('Error deleting meditation:', error.message);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete meditation. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
-  const handleEdit = (id: string) => {
-    navigate(`/meditation/${id}`);
-  };
-
-  const handleCopyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: 'Copied to clipboard',
-    });
   };
 
   return (
-    <div className="min-h-screen bg-background antialiased">
-      <div className="flex">
-        <div
-          className={cn(
-            'bg-secondary w-64 flex-shrink-0 border-r border-border h-screen py-4 px-2 transition-transform duration-300 transform md:translate-x-0',
-            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          )}
-        >
-          <div className="flex items-center justify-between mb-6">
-            <Link to="/" className="font-bold text-lg">
-              Serene Symphony
+    <div className="min-h-screen flex bg-meditation-tranquil">
+      <button 
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="md:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-md shadow-md"
+        aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+      >
+        {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+      <aside 
+        className={`${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } transition-transform duration-300 ease-in-out w-64 h-screen bg-white border-r border-gray-100 p-5 flex flex-col fixed left-0 top-0 z-40 md:translate-x-0`}
+      >
+        <div className="flex items-center mb-10 mt-4 md:mt-0">
+          <div className="relative h-8 w-8 mr-2">
+            <div className="absolute inset-0 bg-meditation-calm-blue rounded-full animate-breathe opacity-20"></div>
+            <div className="absolute inset-1 bg-meditation-calm-blue rounded-full animate-breathe opacity-40" style={{ animationDelay: "0.5s" }}></div>
+            <div className="absolute inset-2 bg-meditation-calm-blue rounded-full animate-breathe opacity-60" style={{ animationDelay: "1s" }}></div>
+            <div className="absolute inset-3 bg-meditation-calm-blue rounded-full animate-breathe opacity-80" style={{ animationDelay: "1.5s" }}></div>
+          </div>
+          <span className="text-xl font-medium ml-2">Serene</span>
+        </div>
+
+        <div className="flex-1">
+          <nav className="space-y-1">
+            <Link 
+              to="/dashboard" 
+              className="flex items-center px-3 py-2 text-md font-medium rounded-md bg-meditation-light-blue text-foreground"
+              onClick={() => isMobile && setSidebarOpen(false)}
+            >
+              <Clock className="mr-3 h-5 w-5" />
+              My Meditations
             </Link>
-            <button onClick={() => setIsSidebarOpen(false)} className="md:hidden">
-              X
-            </button>
-          </div>
+            
+            <Link 
+              to="/create" 
+              className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
+              onClick={() => isMobile && setSidebarOpen(false)}
+            >
+              <Plus className="mr-3 h-5 w-5" />
+              Create New
+            </Link>
 
-          <div className="mb-4">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="w-full justify-start">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Meditation
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="sm:max-w-md">
-                <SheetHeader>
-                  <SheetTitle>Create Meditation</SheetTitle>
-                  <SheetDescription>
-                    Craft your personalized meditation script with ease.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="title" className="text-right">
-                      Title
-                    </Label>
-                    <Input
-                      type="text"
-                      id="title"
-                      name="title"
-                      value={formValues.title}
-                      onChange={handleInputChange}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="duration" className="text-right">
-                      Duration
-                    </Label>
-                    <Input
-                      type="number"
-                      id="duration"
-                      name="duration"
-                      value={formValues.duration}
-                      onChange={handleInputChange}
-                      className="col-span-3"
-                      min="1"
-                      max="60"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="style" className="text-right">
-                      Style
-                    </Label>
-                    <select
-                      id="style"
-                      name="style"
-                      value={formValues.style}
-                      onChange={handleSelectChange}
-                      className="col-span-3 bg-background border border-input rounded-md px-3 py-2 focus:outline-none focus:border-primary"
-                    >
-                      <option value="Mindfulness">Mindfulness</option>
-                      <option value="Breathwork">Breathwork</option>
-                      <option value="Body Scan">Body Scan</option>
-                      <option value="Loving-Kindness">Loving-Kindness</option>
-                      <option value="Visualization">Visualization</option>
-                      <option value="Guided Imagery">Guided Imagery</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="backgroundSound" className="text-right">
-                      Background Sound
-                    </Label>
-                    <select
-                      id="backgroundSound"
-                      name="backgroundSound"
-                      value={formValues.backgroundSound}
-                      onChange={handleSelectChange}
-                      className="col-span-3 bg-background border border-input rounded-md px-3 py-2 focus:outline-none focus:border-primary"
-                    >
-                      <option value="Ocean Waves">Ocean Waves</option>
-                      <option value="Rain">Rain</option>
-                      <option value="Forest">Forest</option>
-                      <option value="Birds">Birds</option>
-                      <option value="None">None</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="voiceId" className="text-right">
-                      Voice
-                    </Label>
-                    <select
-                      id="voiceId"
-                      name="voiceId"
-                      value={formValues.voiceId}
-                      onChange={handleSelectChange}
-                      className="col-span-3 bg-background border border-input rounded-md px-3 py-2 focus:outline-none focus:border-primary"
-                    >
-                      <option value="1">Voice 1</option>
-                      <option value="2">Voice 2</option>
-                      <option value="3">Voice 3</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="script" className="text-right">
-                      Script
-                    </Label>
-                    <div className="col-span-3">
-                      <Textarea
-                        id="script"
-                        name="script"
-                        value={formValues.script}
-                        onChange={handleInputChange}
-                        className="resize-none"
-                      />
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={generateScript}
-                        disabled={isGenerating}
-                        className="mt-2 w-full"
-                      >
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          'Generate Script'
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Please wait
-                    </>
-                  ) : (
-                    'Save Meditation'
-                  )}
-                </Button>
-              </SheetContent>
-            </Sheet>
-          </div>
-
-          <nav>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/account" className="flex items-center space-x-2 py-2 px-4 rounded-md hover:bg-accent hover:text-accent-foreground">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.image} />
-                    <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <span>Account</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/" className="flex items-center space-x-2 py-2 px-4 rounded-md hover:bg-accent hover:text-accent-foreground">
-                  <Waves className="h-4 w-4" />
-                  <span>Home</span>
-                </Link>
-              </li>
-            </ul>
+            <Link 
+              to="/advanced-create" 
+              className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
+              onClick={() => isMobile && setSidebarOpen(false)}
+            >
+              <ChevronRight className="mr-3 h-5 w-5" />
+              Advanced Create
+            </Link>
+            
+            <Link 
+              to="/settings" 
+              className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
+              onClick={() => isMobile && setSidebarOpen(false)}
+            >
+              <Settings className="mr-3 h-5 w-5" />
+              Settings
+            </Link>
           </nav>
         </div>
 
-        <div className="flex-1 p-4">
-          <div className="md:hidden mb-4">
-            <Button onClick={() => setIsSidebarOpen(true)}>Open Menu</Button>
+        <div className="mt-auto">
+          <div className="flex items-center px-3 py-3 mb-2">
+            <div className="h-10 w-10 rounded-full bg-meditation-calm-blue flex items-center justify-center text-white">
+              <User size={20} />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium">
+                {user?.user_metadata?.name || 'User'}
+              </p>
+              <p className="text-xs text-foreground/60 capitalize">
+                {subscriptionStatus === 'free' ? 'Free Plan' : 
+                 subscriptionStatus === 'premium' ? 'Premium Plan' :
+                 subscriptionStatus === 'lifetime' ? 'Lifetime Plan' :
+                 'Free Plan'}
+              </p>
+            </div>
+          </div>
+          
+          <button 
+            onClick={handleLogout}
+            className="flex w-full items-center px-3 py-2 text-sm font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
+          >
+            <LogOut className="mr-3 h-5 w-5" />
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 z-30 md:hidden" 
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <main className={`flex-1 p-6 sm:p-8 transition-all duration-300 ${
+        isMobile ? 'ml-0 mt-16' : 'md:ml-64'
+      }`}>
+        <div className="max-w-6xl mx-auto">
+          <header className="mb-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {firstName}</h1>
+                <p className="text-foreground/70 mt-1">Your meditation journey continues</p>
+              </div>
+              <div className="mt-4 md:mt-0">
+                <Link to="/create" className="btn-primary-gradient flex items-center">
+                  <Plus size={18} className="mr-2" />
+                  Create Meditation
+                </Link>
+              </div>
+            </div>
+          </header>
+
+          <div className="mb-8">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground/50" size={18} />
+              <Input 
+                type="text" 
+                placeholder="Search your meditations..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-white border-gray-200"
+              />
+            </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {meditations.length === 0 && !isFetching ? (
-              <p className="text-muted-foreground">No meditations found. Create one to get started.</p>
-            ) : (
-              meditations.map((meditation) => (
-                <div key={meditation.id} className="bg-card rounded-lg shadow-sm overflow-hidden">
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-2">{meditation.title}</h3>
-                    <p className="text-muted-foreground text-sm mb-4">
-                      {meditation.style} - {meditation.duration} minutes
-                    </p>
-                    <p className="text-muted-foreground text-sm line-clamp-3">{meditation.script}</p>
-                  </div>
-                  <div className="border-t border-border p-2 flex justify-between items-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopyToClipboard(meditation.script)}
-                      className="space-x-1.5"
-                    >
-                      <Copy className="h-4 w-4" />
-                      <span>Copy</span>
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreVertical className="h-4 w-4" />
+          <section>
+            <div className="flex items-center mb-6">
+              <h2 className="text-xl font-semibold">Your Meditations</h2>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="ml-2 text-gray-500 hover:text-gray-700 transition-colors">
+                      <Info size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs bg-white p-3 rounded-lg shadow-lg">
+                    <p className="text-sm">Your meditations become more helpful the more specific they are to your personal goals. Include details about what you want to achieve in your meditation script.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-gray-100 animate-pulse rounded-lg h-48"></div>
+                ))}
+              </div>
+            ) : filteredMeditations.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredMeditations.map((meditation) => (
+                  <div 
+                    key={meditation.id} 
+                    className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
+                  >
+                    <div className={`h-2 ${
+                      meditation.style === 'mindfulness' ? 'bg-blue-400' :
+                      meditation.style === 'breathwork' ? 'bg-green-400' :
+                      meditation.style === 'bodyscan' ? 'bg-purple-400' :
+                      meditation.style === 'visualization' ? 'bg-yellow-400' :
+                      'bg-gray-400'
+                    }`}></div>
+                    <div className="p-5">
+                      <h3 className="font-semibold text-lg mb-1">{meditation.title}</h3>
+                      <div className="flex items-center text-sm text-foreground/70 mb-3">
+                        <span>{meditation.duration} minutes</span>
+                        <span className="mx-2">•</span>
+                        <span>{meditation.style}</span>
+                      </div>
+                      <p className="text-xs text-foreground/50 mb-4">
+                        Created {formatCreationDate(meditation.created_at)}
+                      </p>
+                      
+                      <div className="flex items-center justify-between">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handlePlayPause(meditation.id, meditation.audio_url)}
+                          className="flex items-center"
+                        >
+                          {playingId === meditation.id ? (
+                            <>
+                              <Pause size={16} className="mr-1" />
+                              Pause
+                            </>
+                          ) : (
+                            <>
+                              <Play size={16} className="mr-1" />
+                              Play
+                            </>
+                          )}
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleEdit(meditation.id)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleDelete(meditation.id)} disabled={isFetching}>
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleDownload(meditation)}
+                          >
+                            <Download size={16} />
+                          </Button>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Trash size={16} className="text-red-500" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Meditation</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{meditation.title}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDelete(meditation.id)}
+                                  className="bg-red-500 hover:bg-red-600"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <div className="mx-auto w-16 h-16 bg-meditation-light-blue rounded-full flex items-center justify-center mb-4">
+                  <Info size={24} className="text-meditation-deep-blue" />
                 </div>
-              ))
+                <h3 className="text-lg font-medium mb-2">No meditations found</h3>
+                <p className="text-foreground/70 mb-6">
+                  {searchQuery ? 
+                    "No meditations match your search query." : 
+                    "You haven't created any meditations yet."}
+                </p>
+                <Link to="/create">
+                  <Button>
+                    <Plus size={18} className="mr-2" />
+                    Create Your First Meditation
+                  </Button>
+                </Link>
+              </div>
             )}
-             {isFetching && (
-              <>
-                <Skeleton className="h-40 w-full rounded-md" />
-                <Skeleton className="h-40 w-full rounded-md" />
-                <Skeleton className="h-40 w-full rounded-md" />
-                <Skeleton className="h-40 w-full rounded-md" />
-              </>
-            )}
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
