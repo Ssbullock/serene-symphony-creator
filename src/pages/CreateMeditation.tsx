@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, RefreshCw, Clock, CheckCircle, Mic, Music, Play, Save, Download, X, Info, ChevronLeft, ChevronRight, Pause } from "lucide-react";
+import { ArrowLeft, RefreshCw, Clock, CheckCircle, Mic, Music, Play, Save, Download, X, Info, ChevronLeft, ChevronRight, Pause, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -674,12 +674,9 @@ const CreateMeditation = () => {
         // Don't pass userId since it's not saved to Supabase yet
       });
       
-      if (!response.ok) {
-        throw new Error(`Discard request failed with status ${response.status}`);
-      }
-      
       const result = await response.json();
       
+      // Check the success flag from the API response instead of response.ok
       if (result.success) {
         toast({
           title: "Meditation Discarded",
@@ -694,10 +691,12 @@ const CreateMeditation = () => {
       }
     } catch (error) {
       console.error('Error discarding meditation:', error);
+      // Since the files might still be deleted even if we get an error,
+      // we'll show a less alarming message and continue with navigation
       toast({
-        title: "Error",
-        description: "Failed to discard meditation, but you can still navigate away.",
-        variant: "destructive"
+        title: "Note",
+        description: "Your meditation has been discarded. You can create a new one.",
+        variant: "default"
       });
       
       // Navigate anyway
@@ -839,6 +838,36 @@ const CreateMeditation = () => {
     }
   };
 
+  // Add the inferGoals function
+  const inferGoals = async (meditationTitle: string) => {
+    try {
+      setIsGenerating(true);
+      const response = await fetch('/api/infer-goals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: meditationTitle }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to infer goals');
+      }
+
+      const data = await response.json();
+      setGoals(data.goals);
+    } catch (error) {
+      console.error('Error inferring goals:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate meditation goals. Please try entering them manually.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // Add loading handling
   if (userLoading) {
     return (
@@ -913,11 +942,11 @@ const CreateMeditation = () => {
           {step === 1 && (
             <div className="p-8 animate-fade-in">
               <h2 className="text-2xl font-semibold mb-6 text-center">Name Your Meditation</h2>
-              <p className="text-center text-foreground/70 mb-8">Give your meditation a title, or use one of our suggestions.</p>
+              <p className="text-center text-foreground/70 mb-8">Give your meditation a title, and we'll help you define its goals.</p>
               
               <div className="max-w-md mx-auto">
                 <div className="mb-6">
-                  <Label htmlFor="title" className="mb-2 block">Meditation Title (Optional)</Label>
+                  <Label htmlFor="title" className="mb-2 block">Meditation Title</Label>
                   <div className="flex">
                     <Input
                       id="title"
@@ -925,32 +954,48 @@ const CreateMeditation = () => {
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="e.g. Morning Clarity"
                       className="rounded-r-none"
+                      required
                     />
                     <Button 
                       type="button" 
                       variant="outline" 
                       className="rounded-l-none border-l-0"
-                      onClick={getRandomTitle}
+                      onClick={() => inferGoals(title)}
+                      disabled={!title || isGenerating}
                     >
-                      <RefreshCw size={16} className={title ? "mr-2" : ""} />
-                      {title ? "New" : ""}
+                      <Wand2 size={16} className="mr-2" />
+                      {isGenerating ? (
+                        <span className="inline-flex items-center">
+                          AI<span className="animate-ellipsis">...</span>
+                        </span>
+                      ) : (
+                        "AI Expand"
+                      )}
                     </Button>
                   </div>
                 </div>
 
-                {/* Add Goals Input Field */}
+                {/* Goals Input Field */}
                 <div className="mb-6">
                   <Label htmlFor="goals" className="mb-2 block">Meditation Goals</Label>
                   <Textarea
                     id="goals"
-                    value={goals}
+                    value={isGenerating ? "Analyzing meditation title..." : goals}
                     onChange={(e) => setGoals(e.target.value)}
-                    placeholder="e.g. Reduce stress, improve focus, find inner peace"
-                    className="resize-none"
+                    placeholder="Click 'AI Expand' to automatically generate goals based on your title, or enter them manually"
+                    className={`resize-none ${isGenerating ? 'animate-pulse' : ''}`}
                     rows={3}
+                    disabled={isGenerating}
                   />
                   <p className="text-xs text-foreground/70 mt-1">
-                    Describe what you want to achieve with this meditation
+                    {isGenerating ? (
+                      <span className="inline-flex">
+                        Generating goals
+                        <span className="animate-ellipsis">...</span>
+                      </span>
+                    ) : (
+                      "Let AI suggest goals based on your meditation title"
+                    )}
                   </p>
                 </div>
 
@@ -958,7 +1003,11 @@ const CreateMeditation = () => {
                   <Button variant="ghost" onClick={() => navigate("/dashboard")}>
                     Cancel
                   </Button>
-                  <Button onClick={() => setStep(2)} className="btn-primary">
+                  <Button 
+                    onClick={() => setStep(2)} 
+                    className="btn-primary"
+                    disabled={!title} // Make title required
+                  >
                     Continue
                   </Button>
                 </div>
@@ -979,10 +1028,10 @@ const CreateMeditation = () => {
                       key={min}
                       type="button"
                       variant={duration === min ? "default" : "outline"}
-                      className={duration === min ? "bg-meditation-calm-blue hover:bg-meditation-calm-blue/90" : ""}
+                      className={`${duration === min ? "bg-meditation-calm-blue hover:bg-meditation-calm-blue/90" : ""} pr-6 pl-6`}
                       onClick={() => setDuration(min)}
                     >
-                      <Clock size={16} className="mr-2" />
+                      <Clock size={16} className="mr-.05" />
                       {min} min
                     </Button>
                   ))}
@@ -1202,6 +1251,31 @@ const CreateMeditation = () => {
             </div>
           )}
 
+          {/* Loading/Generating State - Only show during meditation generation */}
+          {isGenerating && step === 6 && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in-slow">
+              <div className="bg-white rounded-xl p-8 max-w-md w-full text-center">
+                <div className="relative h-20 w-20 mx-auto mb-6">
+                  {/* Outer circle */}
+                  <div className="absolute top-0 left-0 w-20 h-20 bg-meditation-calm-blue rounded-full animate-breathe opacity-20"></div>
+                  {/* Second circle */}
+                  <div className="absolute top-2 left-2 w-16 h-16 bg-meditation-calm-blue rounded-full animate-breathe opacity-40" style={{ animationDelay: "0.5s" }}></div>
+                  {/* Third circle */}
+                  <div className="absolute top-4 left-4 w-12 h-12 bg-meditation-calm-blue rounded-full animate-breathe opacity-60" style={{ animationDelay: "1s" }}></div>
+                  {/* Inner circle */}
+                  <div className="absolute top-6 left-6 w-8 h-8 bg-meditation-calm-blue rounded-full animate-breathe opacity-80" style={{ animationDelay: "1.5s" }}></div>
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Creating Your Meditation</h3>
+                <p className="text-foreground/70 mb-4">
+                  {loadingMessage || `We're crafting your perfect ${formatMinutesForDisplay(duration)}-minute ${getStyleName(style)} meditation...`}
+                </p>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-meditation-calm-blue animate-loading-bar" style={{ width: '100%' }}></div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Step 6: Review and Create */}
           {step === 6 && (
             <div className="p-8 animate-fade-in">
@@ -1266,27 +1340,6 @@ const CreateMeditation = () => {
                       "Create Meditation"
                     )}
                   </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Loading/Generating State */}
-          {isGenerating && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in-slow">
-              <div className="bg-white rounded-xl p-8 max-w-md w-full text-center">
-                <div className="relative h-20 w-20 bg-meditation-calm-blue rounded-full mx-auto mb-6">
-                  <div className="absolute inset-0 bg-meditation-calm-blue rounded-full animate-breathe opacity-20"></div>
-                  <div className="absolute inset-2 bg-meditation-calm-blue rounded-full animate-breathe opacity-40" style={{ animationDelay: "0.5s" }}></div>
-                  <div className="absolute inset-4 bg-meditation-calm-blue rounded-full animate-breathe opacity-60" style={{ animationDelay: "1s" }}></div>
-                  <div className="absolute inset-6 bg-meditation-calm-blue rounded-full animate-breathe opacity-80" style={{ animationDelay: "1.5s" }}></div>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Creating Your Meditation</h3>
-                <p className="text-foreground/70 mb-4">
-                  {loadingMessage || `We're crafting your perfect ${formatMinutesForDisplay(duration)}-minute ${getStyleName(style)} meditation...`}
-                </p>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-meditation-calm-blue animate-loading-bar" style={{ width: '100%' }}></div>
                 </div>
               </div>
             </div>

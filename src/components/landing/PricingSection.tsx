@@ -70,10 +70,10 @@ const PricingSection = ({ isVisible }: PricingSectionProps) => {
               price: "$0",
               description: "Start your meditation journey",
               features: [
-                "3 AI meditations per month",
-                "2 voice options",
+                "5 AI meditations per month",
+                "Basic voice options",
                 "Basic backgrounds",
-                "5-minute maximum duration",
+                "10-minute maximum duration",
                 "Community support"
               ],
               btnText: "Get Started Free",
@@ -89,10 +89,10 @@ const PricingSection = ({ isVisible }: PricingSectionProps) => {
               description: "Perfect for those just starting their meditation journey",
               features: [
                 "Unlimited AI meditations",
-                "All voice options",
+                "Advanced custom voices",
                 "All background sounds",
                 "Download meditations",
-                "New voices added monthly"
+                "Personalized meditation journey"
               ],
               btnText: billingType === 'monthly' ? "Get Premium Monthly" : "Get Premium Annual",
               popular: true,
@@ -119,11 +119,15 @@ const PricingSection = ({ isVisible }: PricingSectionProps) => {
           ].map((plan, index) => (
             <div 
               key={index}
-              className={`rounded-xl overflow-hidden transition-all duration-700 hover:shadow-xl ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'} ${plan.popular ? 'border-2 border-meditation-deep-blue shadow-lg transform md:-translate-y-4 hover:scale-105' : 'border border-gray-200 hover:scale-102'}`}
+              className={`rounded-xl overflow-hidden transition-all duration-700 hover:shadow-xl ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'} ${
+                plan.popular 
+                  ? 'border-2 border-meditation-deep-blue shadow-lg transform md:-translate-y-4 hover:scale-105 bg-gradient-to-br from-meditation-deep-blue/5 to-meditation-calm-blue/5' 
+                  : 'border border-gray-200 hover:scale-102'
+              }`}
               style={{ transitionDelay: `${plan.delay}ms` }}
             >
               {plan.popular && (
-                <div className="bg-meditation-deep-blue text-white text-center py-2 text-sm font-medium">
+                <div className="bg-gradient-to-r from-meditation-deep-blue to-meditation-calm-blue text-white text-center py-2 text-sm font-medium">
                   Most Popular
                 </div>
               )}

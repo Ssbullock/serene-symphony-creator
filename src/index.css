@@ -305,3 +305,18 @@
 .animate-loading-bar {
   animation: loadingBar 2s ease-in-out infinite;
 }
+
+@keyframes ellipsis {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+  100% { content: ''; }
+}
+
+.animate-ellipsis::after {
+  content: '';
+  display: inline-block;
+  width: 1.5em;
+  animation: ellipsis 1.5s infinite steps(4);
+}
