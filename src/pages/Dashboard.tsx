@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, ChevronRight, Crown, Mic, Diamond } from "lucide-react";
+import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, Mic } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,6 @@ import api from '@/lib/api';
 import { UpgradePremiumModal } from "@/components/UpgradePremiumModal";
 import { Meditation } from "@/types/meditation";
 
-// Define the Meditation interface to match what's coming from Supabase
 interface MeditationWithAudio extends Meditation {
   audio_url: string;
   created_at: string;
@@ -47,7 +45,6 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchMeditations = async () => {
       if (!user) return;
-      
       try {
         setLoading(true);
         const { data, error } = await supabase
@@ -55,13 +52,18 @@ const Dashboard = () => {
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
-        
         if (error) {
           throw error;
         }
-        
-        // Properly type the data from supabase to match MeditationWithAudio
-        setMeditations(data as MeditationWithAudio[] || []);
+        if (Array.isArray(data)) {
+          setMeditations(
+            data.map((row) => ({
+              ...(row as MeditationWithAudio)
+            }))
+          );
+        } else {
+          setMeditations([]);
+        }
       } catch (error) {
         console.error('Error fetching meditations:', error);
         toast({
@@ -73,23 +75,19 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-    
     fetchMeditations();
   }, [user]);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!user?.id) return;
-      
       try {
         const { data, error } = await supabase
           .from('users')
           .select('subscription_status')
           .eq('id', user.id)
           .single();
-
         if (error) throw error;
-        
         if (data?.subscription_status) {
           setSubscriptionStatus(data.subscription_status as string);
         }
@@ -97,11 +95,10 @@ const Dashboard = () => {
         console.error('Error fetching user profile:', error);
       }
     };
-
     fetchUserProfile();
   }, [user?.id]);
 
-  const filteredMeditations = meditations.filter(meditation => 
+  const filteredMeditations = meditations.filter(meditation =>
     meditation.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -330,7 +327,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex bg-meditation-tranquil">
-      <button 
+      <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         className="md:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-md shadow-md"
         aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
@@ -338,7 +335,7 @@ const Dashboard = () => {
         {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      <aside 
+      <aside
         className={`${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         } transition-transform duration-300 ease-in-out w-64 h-screen bg-white border-r border-gray-100 p-5 flex flex-col fixed left-0 top-0 z-40 md:translate-x-0`}
@@ -355,17 +352,17 @@ const Dashboard = () => {
 
         <div className="flex-1">
           <nav className="space-y-1">
-            <Link 
-              to="/dashboard" 
+            <Link
+              to="/dashboard"
               className="flex items-center px-3 py-2 text-md font-medium rounded-md bg-meditation-light-blue text-foreground"
               onClick={() => isMobile && setSidebarOpen(false)}
             >
               <Clock className="mr-3 h-5 w-5" />
               My Meditations
             </Link>
-            
-            <Link 
-              to="/create" 
+
+            <Link
+              to="/create"
               className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
               onClick={() => isMobile && setSidebarOpen(false)}
             >
@@ -373,47 +370,45 @@ const Dashboard = () => {
               Create New
             </Link>
 
-            <Link 
-              to="/advanced-create" 
-              className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors relative group"
+            <Link
+              to="/advanced-create"
+              className="flex items-center px-3 py-2 text-md font-medium rounded-xl relative group"
               onClick={() => isMobile && setSidebarOpen(false)}
               style={{
-                borderWidth: 3,
-                borderStyle: 'solid',
-                borderRadius: '0.5rem',
+                border: "3px solid",
+                borderRadius: "0.75rem",
                 backgroundClip: 'padding-box',
-                borderImage: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%) 1',
-                marginBottom: '0.75rem'
+                borderImage: 'linear-gradient(90deg, #3B82F6 0%, #2DD4BF 100%) 1',
+                marginBottom: '0.75rem',
+                background: 'white'
               }}
             >
-              <span className="flex items-center">
-                <Mic 
-                  size={18}
-                  className="mr-2"
-                  style={{
-                    display: 'inline-block',
-                    verticalAlign: 'middle',
-                    background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}
-                />
-                Advanced Create
-                <span
-                  className="ml-2 rounded px-1.5 py-0.5 text-xs font-semibold"
-                  style={{
-                    background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
-                    color: 'white',
-                    marginLeft: '0.4rem',
-                  }}
-                >
-                  Premium
-                </span>
+              <Mic
+                size={18}
+                className="mr-2"
+                style={{
+                  display: 'inline-block',
+                  verticalAlign: 'middle',
+                  background: 'linear-gradient(90deg, #3B82F6 0%, #2DD4BF 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}
+              />
+              Advanced Create
+              <span
+                className="ml-2 rounded px-1.5 py-0.5 text-xs font-semibold"
+                style={{
+                  background: "#7ED321",
+                  color: 'white',
+                  marginLeft: '0.4rem',
+                }}
+              >
+                Premium
               </span>
             </Link>
-            
-            <Link 
-              to="/settings" 
+
+            <Link
+              to="/settings"
               className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
               onClick={() => isMobile && setSidebarOpen(false)}
             >
@@ -424,45 +419,16 @@ const Dashboard = () => {
         </div>
 
         <div className="mb-3 flex flex-col gap-2">
-          <button
-            className="flex items-center justify-center w-full py-2 rounded-xl border-2 border-transparent bg-white font-semibold shadow 
-               bg-gradient-to-r from-meditation-soft-green to-meditation-calm-blue p-[2px] relative overflow-hidden"
+          <Button
+            className="w-full py-2 font-semibold rounded-xl text-white shadow bg-gradient-to-r from-meditation-soft-green to-meditation-calm-blue border-0"
             style={{
-              borderImage: "linear-gradient(90deg,#7ED321 0%,#33C3F0 100%) 1",
-              borderWidth: '3px',
-              borderStyle: "solid",
-              borderRadius: "1rem"
+              fontSize: "1rem",
+              marginBottom: '0.5rem',
             }}
             onClick={() => setPremiumModalOpen(true)}
           >
-            <span
-              className="flex items-center gap-2 w-full justify-center bg-white rounded-xl"
-              style={{
-                background: "white",
-              }}
-            >
-              <Mic
-                size={20}
-                style={{
-                  background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              />
-              <Diamond
-                size={19}
-                style={{
-                  marginLeft: 2,
-                  background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              />
-              <span className="font-semibold bg-gradient-to-r from-meditation-soft-green to-meditation-calm-blue bg-clip-text text-transparent">
-                Upgrade to Premium
-              </span>
-            </span>
-          </button>
+            Upgrade to Premium
+          </Button>
         </div>
 
         <div className="mt-auto">
@@ -475,15 +441,14 @@ const Dashboard = () => {
                 {user?.user_metadata?.name || 'User'}
               </p>
               <p className="text-xs text-foreground/60 capitalize">
-                {subscriptionStatus === 'free' ? 'Free Plan' : 
+                {subscriptionStatus === 'free' ? 'Free Plan' :
                  subscriptionStatus === 'premium' ? 'Premium Plan' :
                  subscriptionStatus === 'lifetime' ? 'Lifetime Plan' :
                  'Free Plan'}
               </p>
             </div>
           </div>
-          
-          <button 
+          <button
             onClick={handleLogout}
             className="flex w-full items-center px-3 py-2 text-sm font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
           >
@@ -494,8 +459,8 @@ const Dashboard = () => {
       </aside>
 
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 z-30 md:hidden" 
+        <div
+          className="fixed inset-0 bg-black/20 z-30 md:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -523,16 +488,16 @@ const Dashboard = () => {
           <div className="mb-8">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground/50" size={18} />
-              <Input 
-                type="text" 
-                placeholder="Search your meditations..." 
+              <Input
+                type="text"
+                placeholder="Search your meditations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 bg-white border-gray-200"
               />
             </div>
           </div>
-
+          
           <section>
             <div className="flex items-center mb-6">
               <h2 className="text-xl font-semibold">Your Meditations</h2>
@@ -662,9 +627,9 @@ const Dashboard = () => {
           </section>
         </div>
       </main>
-      
-      <UpgradePremiumModal 
-        open={premiumModalOpen} 
+
+      <UpgradePremiumModal
+        open={premiumModalOpen}
         onOpenChange={setPremiumModalOpen}
       />
     </div>
