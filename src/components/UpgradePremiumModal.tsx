@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,13 @@ export const UpgradePremiumModal: React.FC<UpgradePremiumModalProps> = ({ open, 
               WebkitTextFillColor: 'transparent'
             }}
           />
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-meditation-soft-green to-meditation-calm-blue bg-clip-text text-transparent">
+          <DialogTitle
+            className="text-2xl font-bold bg-gradient-to-r from-[#7ED321] to-[#33C3F0] bg-clip-text text-transparent"
+            style={{
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             Unlock Premium
           </DialogTitle>
         </div>
@@ -33,11 +38,18 @@ export const UpgradePremiumModal: React.FC<UpgradePremiumModalProps> = ({ open, 
       <div className="my-4 text-center">
         <p className="mb-2">Upgrade now to enjoy all premium benefits and boost your meditation journey!</p>
         <Button
-          className="w-full py-3 font-bold rounded-xl bg-gradient-to-r from-meditation-soft-green to-meditation-calm-blue text-white shadow-lg border-0"
+          className="w-full py-3 font-bold rounded-xl bg-white border-0 shadow-lg transition hover:bg-gray-100"
         >
-          Upgrade Now
+          <span
+            className="bg-gradient-to-r from-[#7ED321] to-[#33C3F0] bg-clip-text text-transparent"
+            style={{
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Upgrade Now
+          </span>
         </Button>
-        {/* You can wire this button to Stripe checkout functionality. */}
       </div>
       <DialogClose asChild>
         <Button variant="ghost" className="w-full mt-2">Cancel</Button>
