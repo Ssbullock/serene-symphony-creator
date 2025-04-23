@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, ChevronRight, Crown, Microphone, Diamond } from "lucide-react";
+import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, ChevronRight, Crown, Mic, Diamond } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,12 +15,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { formatDistanceToNow } from "date-fns";
 import api from '@/lib/api';
 import { UpgradePremiumModal } from "@/components/UpgradePremiumModal";
+import { Meditation } from "@/types/meditation";
 
-interface Meditation {
-  id: string;
-  title: string;
-  duration: number;
-  style: string;
+// Define the Meditation interface to match what's coming from Supabase
+interface MeditationWithAudio extends Meditation {
   audio_url: string;
   created_at: string;
   background: string;
@@ -27,7 +26,7 @@ interface Meditation {
 }
 
 const Dashboard = () => {
-  const [meditations, setMeditations] = useState<Meditation[]>([]);
+  const [meditations, setMeditations] = useState<MeditationWithAudio[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -61,7 +60,8 @@ const Dashboard = () => {
           throw error;
         }
         
-        setMeditations(data || []);
+        // Properly type the data from supabase to match MeditationWithAudio
+        setMeditations(data as MeditationWithAudio[] || []);
       } catch (error) {
         console.error('Error fetching meditations:', error);
         toast({
@@ -382,18 +382,18 @@ const Dashboard = () => {
                 borderStyle: 'solid',
                 borderRadius: '0.5rem',
                 backgroundClip: 'padding-box',
-                borderImage: 'linear-gradient(90deg, #8B5CF6 0%, #33C3F0 100%) 1',
+                borderImage: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%) 1',
                 marginBottom: '0.75rem'
               }}
             >
               <span className="flex items-center">
-                <Crown 
+                <Mic 
                   size={18}
                   className="mr-2"
                   style={{
                     display: 'inline-block',
                     verticalAlign: 'middle',
-                    background: 'linear-gradient(90deg, #8B5CF6 0%, #33C3F0 100%)',
+                    background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent'
                   }}
@@ -402,7 +402,7 @@ const Dashboard = () => {
                 <span
                   className="ml-2 rounded px-1.5 py-0.5 text-xs font-semibold"
                   style={{
-                    background: 'linear-gradient(90deg, #8B5CF6 0%, #33C3F0 100%)',
+                    background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
                     color: 'white',
                     marginLeft: '0.4rem',
                   }}
@@ -441,7 +441,7 @@ const Dashboard = () => {
                 background: "white",
               }}
             >
-              <Microphone
+              <Mic
                 size={20}
                 style={{
                   background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
@@ -662,6 +662,11 @@ const Dashboard = () => {
           </section>
         </div>
       </main>
+      
+      <UpgradePremiumModal 
+        open={premiumModalOpen} 
+        onOpenChange={setPremiumModalOpen}
+      />
     </div>
   );
 };
