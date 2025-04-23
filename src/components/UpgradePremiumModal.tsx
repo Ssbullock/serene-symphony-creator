@@ -16,13 +16,13 @@ export const UpgradePremiumModal: React.FC<UpgradePremiumModalProps> = ({ open, 
           <Diamond
             size={28}
             style={{
-              background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
+              background: 'linear-gradient(90deg, #3B82F6 0%, #2DD4BF 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}
           />
           <DialogTitle
-            className="text-2xl font-bold bg-gradient-to-r from-[#7ED321] to-[#33C3F0] bg-clip-text text-transparent"
+            className="text-2xl font-bold bg-gradient-to-r from-[#3B82F6] to-[#2DD4BF] bg-clip-text text-transparent"
             style={{
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
@@ -41,7 +41,7 @@ export const UpgradePremiumModal: React.FC<UpgradePremiumModalProps> = ({ open, 
           className="w-full py-3 font-bold rounded-xl bg-white border-0 shadow-lg transition hover:bg-gray-100"
         >
           <span
-            className="bg-gradient-to-r from-[#7ED321] to-[#33C3F0] bg-clip-text text-transparent"
+            className="bg-gradient-to-r from-[#3B82F6] to-[#2DD4BF] bg-clip-text text-transparent"
             style={{
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',

@@ -372,45 +372,19 @@ const Dashboard = () => {
 
             <Link
               to="/advanced-create"
-              className="flex items-center px-3 py-2 text-md font-medium rounded-xl relative group border-2 bg-white transition-all hover:scale-[1.02]"
+              className="flex items-center px-3 py-2 text-md font-medium rounded-xl relative group bg-white transition-all hover:scale-[1.02] hover:text-foreground"
               style={{
-                border: '2.5px solid transparent',
-                borderRadius: '0.75rem',
-                backgroundClip: 'padding-box',
-                boxShadow: '0 1px 10px rgba(59, 130, 246, .08)',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLDivElement).style.borderImage = 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%) 1';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLDivElement).style.borderImage = '';
+                border: '2px solid transparent',
+                backgroundImage: 'linear-gradient(white, white), linear-gradient(90deg, #3B82F6, #2DD4BF)',
+                backgroundOrigin: 'border-box',
+                backgroundClip: 'padding-box, border-box',
+                boxShadow: '0 1px 10px rgba(59, 130, 246, .08)'
               }}
               onClick={() => isMobile && setSidebarOpen(false)}
             >
-              <Mic
-                size={18}
-                className="mr-2"
-                style={{
-                  display: 'inline-block',
-                  verticalAlign: 'middle',
-                  background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}
-              />
-              Advanced Create
-              <span
-                className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded bg-white"
-                style={{
-                  background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
-                  color: 'white',
-                  borderRadius: '0.5rem',
-                  marginLeft: '0.4rem',
-                  display: 'inline-block',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}
-              >
+              <Mic className="mr-3 h-5 w-5 text-foreground/70" />
+              <span className="text-foreground/70">Advanced Create</span>
+              <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded bg-white text-transparent bg-clip-text bg-gradient-to-r from-[#3B82F6] to-[#2DD4BF]">
                 Premium
               </span>
             </Link>
@@ -428,7 +402,7 @@ const Dashboard = () => {
 
         <div className="mb-3 flex flex-col gap-2">
           <Button
-            className="w-full py-2 font-semibold rounded-xl shadow border-0 bg-white transition hover:bg-gray-100"
+            className="w-full py-2 font-semibold rounded-xl border-0 bg-white transition hover:bg-gray-100"
             style={{
               fontSize: "1rem",
               marginBottom: '0.5rem',
@@ -436,7 +410,7 @@ const Dashboard = () => {
             onClick={() => setPremiumModalOpen(true)}
           >
             <span
-              className="bg-gradient-to-r from-[#7ED321] to-[#33C3F0] bg-clip-text text-transparent font-bold"
+              className="bg-gradient-to-r from-[#3B82F6] to-[#2DD4BF] bg-clip-text text-transparent font-bold"
               style={{
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
