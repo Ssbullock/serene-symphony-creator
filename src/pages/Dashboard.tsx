@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, ChevronRight, Crown } from "lucide-react";
+import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, ChevronRight, Crown, Microphone, Diamond } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { useUser } from "@/hooks/use-user";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
 import api from '@/lib/api';
+import { UpgradePremiumModal } from "@/components/UpgradePremiumModal";
 
 interface Meditation {
   id: string;
@@ -36,6 +37,7 @@ const Dashboard = () => {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('free');
+  const [premiumModalOpen, setPremiumModalOpen] = useState(false);
 
   useEffect(() => {
     setSidebarOpen(!isMobile);
@@ -419,6 +421,48 @@ const Dashboard = () => {
               Settings
             </Link>
           </nav>
+        </div>
+
+        <div className="mb-3 flex flex-col gap-2">
+          <button
+            className="flex items-center justify-center w-full py-2 rounded-xl border-2 border-transparent bg-white font-semibold shadow 
+               bg-gradient-to-r from-meditation-soft-green to-meditation-calm-blue p-[2px] relative overflow-hidden"
+            style={{
+              borderImage: "linear-gradient(90deg,#7ED321 0%,#33C3F0 100%) 1",
+              borderWidth: '3px',
+              borderStyle: "solid",
+              borderRadius: "1rem"
+            }}
+            onClick={() => setPremiumModalOpen(true)}
+          >
+            <span
+              className="flex items-center gap-2 w-full justify-center bg-white rounded-xl"
+              style={{
+                background: "white",
+              }}
+            >
+              <Microphone
+                size={20}
+                style={{
+                  background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              />
+              <Diamond
+                size={19}
+                style={{
+                  marginLeft: 2,
+                  background: 'linear-gradient(90deg, #7ED321 0%, #33C3F0 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              />
+              <span className="font-semibold bg-gradient-to-r from-meditation-soft-green to-meditation-calm-blue bg-clip-text text-transparent">
+                Upgrade to Premium
+              </span>
+            </span>
+          </button>
         </div>
 
         <div className="mt-auto">
