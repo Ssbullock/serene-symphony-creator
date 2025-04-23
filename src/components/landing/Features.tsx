@@ -1,5 +1,5 @@
-
-import { Sparkles } from "lucide-react";
+import React from 'react';
+import { Sparkles, Mic } from "lucide-react";
 
 interface FeaturesProps {
   isVisible: boolean;
@@ -34,9 +34,7 @@ const Features = ({ isVisible }: FeaturesProps) => {
               description: "Choose from multiple natural-sounding voices with perfect pronunciation and emotional resonance.",
               icon: (
                 <div className="h-12 w-12 rounded-lg bg-meditation-calm-blue flex items-center justify-center shadow-lg shadow-blue-200/50 animate-pulse-soft">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                  </svg>
+                  <Mic className="h-6 w-6 text-white" />
                 </div>
               ),
               delay: 0
