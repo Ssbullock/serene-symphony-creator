@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, ChevronRight } from "lucide-react";
+import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, ChevronRight, Crown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -159,7 +158,6 @@ const Dashboard = () => {
       }
       
       try {
-        // Try playing with background audio first, but only append _with_bg if not already present
         const withBgUrl = audioUrl.includes('supabase.co') 
           ? audioUrl.includes('_with_bg.mp3') 
             ? audioUrl 
@@ -179,7 +177,6 @@ const Dashboard = () => {
           await audio.play();
           setPlayingId(id);
         } catch (bgError) {
-          // Fallback to original version if background version fails
           console.log('Background version failed, trying original:', audioUrl);
           const audio = await loadAudio(audioUrl);
           
@@ -267,7 +264,6 @@ const Dashboard = () => {
 
   const handleDelete = async (meditationId: string) => {
     try {
-      // First delete from Supabase
       const { error: supabaseError } = await supabase
         .from('meditations')
         .delete()
@@ -278,7 +274,6 @@ const Dashboard = () => {
         throw new Error('Failed to delete meditation from database');
       }
       
-      // Then call the API to delete the audio files
       const response = await api.post('/api/delete-meditation', {
         meditationId
       });
@@ -378,11 +373,41 @@ const Dashboard = () => {
 
             <Link 
               to="/advanced-create" 
-              className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors"
+              className="flex items-center px-3 py-2 text-md font-medium rounded-md text-foreground/70 hover:bg-meditation-light-blue/50 hover:text-foreground transition-colors relative group"
               onClick={() => isMobile && setSidebarOpen(false)}
+              style={{
+                borderWidth: 3,
+                borderStyle: 'solid',
+                borderRadius: '0.5rem',
+                backgroundClip: 'padding-box',
+                borderImage: 'linear-gradient(90deg, #8B5CF6 0%, #33C3F0 100%) 1',
+                marginBottom: '0.75rem'
+              }}
             >
-              <ChevronRight className="mr-3 h-5 w-5" />
-              Advanced Create
+              <span className="flex items-center">
+                <Crown 
+                  size={18}
+                  className="mr-2"
+                  style={{
+                    display: 'inline-block',
+                    verticalAlign: 'middle',
+                    background: 'linear-gradient(90deg, #8B5CF6 0%, #33C3F0 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}
+                />
+                Advanced Create
+                <span
+                  className="ml-2 rounded px-1.5 py-0.5 text-xs font-semibold"
+                  style={{
+                    background: 'linear-gradient(90deg, #8B5CF6 0%, #33C3F0 100%)',
+                    color: 'white',
+                    marginLeft: '0.4rem',
+                  }}
+                >
+                  Premium
+                </span>
+              </span>
             </Link>
             
             <Link 
