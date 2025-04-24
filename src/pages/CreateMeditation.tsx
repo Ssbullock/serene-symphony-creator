@@ -842,16 +842,21 @@ const CreateMeditation = () => {
   const inferGoals = async (meditationTitle: string) => {
     try {
       setIsGenerating(true);
-      const response = await fetch('/api/infer-goals', {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      console.log('Using API URL for goals:', apiUrl); // For debugging
+      
+      const response = await fetch(`${apiUrl}/api/infer-goals`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({ title: meditationTitle }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to infer goals');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to infer goals');
       }
 
       const data = await response.json();
