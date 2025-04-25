@@ -1,4 +1,3 @@
-
 import { Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -76,6 +75,18 @@ const HowItWorks = ({ isVisible }: HowItWorksProps) => {
               <p className="text-foreground/70">{step.description}</p>
             </div>
           ))}
+        </div>
+
+        <div className="mt-16 mb-16 text-center">
+          <h3 className="text-2xl font-semibold mb-6">Watch How It Works</h3>
+          <div className="aspect-video max-w-3xl mx-auto rounded-lg overflow-hidden shadow-lg">
+            <iframe 
+              src="https://www.loom.com/embed/7c72ce5c236149beb893f7d57b23af34?sid=fd55d113-5e4d-400b-8b7b-f042fbada946" 
+              frameBorder="0" 
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
         </div>
 
         <div className="text-center mt-16">

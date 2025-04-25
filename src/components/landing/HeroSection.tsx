@@ -20,11 +20,14 @@ const HeroSection = () => {
               >
                 Start for Free
               </Link>
-              <button 
+              <a 
+                href="https://www.loom.com/share/7c72ce5c236149beb893f7d57b23af34?sid=fd55d113-5e4d-400b-8b7b-f042fbada946"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="btn-secondary flex items-center justify-center text-base px-8 py-3 h-auto gap-2"
               >
                 <Play size={18} /> Watch Video
-              </button>
+              </a>
             </div>
           </div>
 
