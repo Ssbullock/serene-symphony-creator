@@ -1271,8 +1271,11 @@ const CreateMeditation = () => {
                   <div className="absolute top-6 left-6 w-8 h-8 bg-meditation-calm-blue rounded-full animate-breathe opacity-80" style={{ animationDelay: "1.5s" }}></div>
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Creating Your Meditation</h3>
-                <p className="text-foreground/70 mb-4">
+                <p className="text-foreground/70 mb-2">
                   {loadingMessage || `We're crafting your perfect ${formatMinutesForDisplay(duration)}-minute ${getStyleName(style)} meditation...`}
+                </p>
+                <p className="text-sm text-foreground/60 mb-4">
+                  This process may take a couple of minutes. Please do not refresh the page.
                 </p>
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-meditation-calm-blue animate-loading-bar" style={{ width: '100%' }}></div>
