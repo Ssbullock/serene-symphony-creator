@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, Mic } from "lucide-react";
@@ -14,6 +15,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { formatDistanceToNow } from "date-fns";
 import api from '@/lib/api';
 import { UpgradePremiumModal } from "@/components/UpgradePremiumModal";
+import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import AudioPlayerBar from "@/components/AudioPlayerBar";
 import { Meditation } from "@/types/meditation";
 
 interface MeditationWithAudio extends Meditation {
@@ -28,13 +31,18 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [playingId, setPlayingId] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [currentMeditation, setCurrentMeditation] = useState<MeditationWithAudio | null>(null);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('free');
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
+  
+  // Audio player hook - only initialize when a meditation is playing
+  const audioPlayer = currentMeditation ? 
+    useAudioPlayer(currentMeditation.audio_url, currentMeditation.background) : 
+    null;
 
   useEffect(() => {
     setSidebarOpen(!isMobile);
@@ -58,7 +66,7 @@ const Dashboard = () => {
         if (Array.isArray(data)) {
           setMeditations(
             data.map((row) => ({
-              ...(row as MeditationWithAudio)
+              ...(row as unknown as MeditationWithAudio)
             }))
           );
         } else {
@@ -134,74 +142,57 @@ const Dashboard = () => {
     });
   };
 
-  const handlePlayPause = async (id: string, audioUrl: string) => {
+  const handlePlayPause = async (meditation: MeditationWithAudio) => {
+    const id = meditation.id;
+    
     if (playingId === id) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        setPlayingId(null);
-        audioRef.current = null;
-      }
+      // Currently playing, so pause
+      audioPlayer?.pause();
+      setPlayingId(null);
+      setCurrentMeditation(null);
     } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      
-      if (!audioUrl) {
-        console.error("Audio URL is missing for meditation:", id);
-        toast({
-          title: "Playback Error",
-          description: "Audio URL is missing for this meditation.",
-          variant: "destructive"
-        });
-        return;
+      // New meditation or switching meditation
+      if (audioPlayer) {
+        audioPlayer.pause();
       }
       
       try {
-        const withBgUrl = audioUrl.includes('supabase.co') 
-          ? audioUrl.includes('_with_bg.mp3') 
-            ? audioUrl 
-            : audioUrl.replace('.mp3', '_with_bg.mp3')
-          : audioUrl;
+        // Set the current meditation before attempting to play
+        setCurrentMeditation(meditation);
+        setPlayingId(id);
         
-        console.log(`Attempting to load audio: ${withBgUrl}`);
-        
-        try {
-          const audio = await loadAudio(withBgUrl);
-          audio.addEventListener('ended', () => {
-            setPlayingId(null);
-            audioRef.current = null;
-          });
-          
-          audioRef.current = audio;
-          await audio.play();
-          setPlayingId(id);
-        } catch (bgError) {
-          console.log('Background version failed, trying original:', audioUrl);
-          const audio = await loadAudio(audioUrl);
-          
-          audio.addEventListener('ended', () => {
-            setPlayingId(null);
-            audioRef.current = null;
-          });
-          
-          audioRef.current = audio;
-          await audio.play();
-          setPlayingId(id);
-        }
+        // The useAudioPlayer hook will initialize with the new meditation URL
+        // We'll let the effect in this component handle the play action
       } catch (error) {
-        console.error("Error playing audio:", error);
+        console.error("Error preparing audio:", error);
         toast({
           title: "Playback Error",
           description: error instanceof Error ? error.message : "Failed to play meditation audio",
           variant: "destructive"
         });
         setPlayingId(null);
-        audioRef.current = null;
+        setCurrentMeditation(null);
       }
     }
   };
 
-  const handleDownload = async (meditation: Meditation) => {
+  // Start playing when currentMeditation changes and audioPlayer is available
+  useEffect(() => {
+    if (currentMeditation && audioPlayer && !audioPlayer.isPlaying) {
+      audioPlayer.play().catch(error => {
+        console.error("Error playing audio:", error);
+        toast({
+          title: "Playback Error",
+          description: "Failed to play meditation audio",
+          variant: "destructive"
+        });
+        setPlayingId(null);
+        setCurrentMeditation(null);
+      });
+    }
+  }, [currentMeditation, audioPlayer]);
+
+  const handleDownload = async (meditation: MeditationWithAudio) => {
     try {
       setLoading(true);
       
@@ -283,6 +274,15 @@ const Dashboard = () => {
       
       setMeditations(meditations.filter(m => m.id !== meditationId));
       
+      // If we're deleting the currently playing meditation
+      if (meditationId === playingId) {
+        if (audioPlayer) {
+          audioPlayer.pause();
+        }
+        setPlayingId(null);
+        setCurrentMeditation(null);
+      }
+      
       toast({
         title: "Meditation Deleted",
         description: "Your meditation has been permanently deleted.",
@@ -324,6 +324,10 @@ const Dashboard = () => {
       });
     }
   };
+
+  // Calculate bottom padding when audio player is active
+  const mainContentStyles = currentMeditation && audioPlayer ? 
+    { paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0))' } : {};
 
   return (
     <div className="min-h-screen flex bg-meditation-tranquil">
@@ -372,7 +376,7 @@ const Dashboard = () => {
 
             <Link
               to="/advanced-create"
-              className="flex items-center px-3 py-2 text-md font-medium rounded-xl relative group bg-white transition-all hover:scale-[1.02] hover:text-foreground"
+              className="flex items-center px-3 py-2 text-md font-medium rounded-xl relative group bg-white transition-all hover:bg-gray-50 hover:scale-[1.02] hover:text-foreground"
               style={{
                 border: '2px solid transparent',
                 backgroundImage: 'linear-gradient(white, white), linear-gradient(90deg, #3B82F6, #2DD4BF)',
@@ -384,7 +388,7 @@ const Dashboard = () => {
             >
               <Mic className="mr-3 h-5 w-5 text-foreground/70" />
               <span className="text-foreground/70">Advanced Create</span>
-              <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded bg-white text-transparent bg-clip-text bg-gradient-to-r from-[#3B82F6] to-[#2DD4BF]">
+              <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold rounded bg-gradient-to-r from-[#3B82F6] to-[#2DD4BF] bg-clip-text text-transparent">
                 Premium
               </span>
             </Link>
@@ -456,9 +460,12 @@ const Dashboard = () => {
         />
       )}
 
-      <main className={`flex-1 p-6 sm:p-8 transition-all duration-300 ${
-        isMobile ? 'ml-0 mt-16' : 'md:ml-64'
-      }`}>
+      <main 
+        className={`flex-1 p-6 sm:p-8 transition-all duration-300 ${
+          isMobile ? 'ml-0 mt-16' : 'md:ml-64'
+        }`}
+        style={mainContentStyles}
+      >
         <div className="max-w-6xl mx-auto">
           <header className="mb-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between">
@@ -540,7 +547,7 @@ const Dashboard = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handlePlayPause(meditation.id, meditation.audio_url)}
+                          onClick={() => handlePlayPause(meditation)}
                           className="flex items-center"
                         >
                           {playingId === meditation.id ? (
@@ -617,6 +624,20 @@ const Dashboard = () => {
           </section>
         </div>
       </main>
+
+      {/* Audio Player Bar */}
+      {currentMeditation && audioPlayer && (
+        <AudioPlayerBar
+          title={currentMeditation.title}
+          duration={audioPlayer.duration}
+          currentTime={audioPlayer.currentTime}
+          isPlaying={audioPlayer.isPlaying}
+          onPlay={audioPlayer.play}
+          onPause={audioPlayer.pause}
+          onSeek={audioPlayer.seek}
+          onVolumeChange={audioPlayer.setVolume}
+        />
+      )}
 
       <UpgradePremiumModal
         open={premiumModalOpen}
