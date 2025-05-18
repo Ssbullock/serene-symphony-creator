@@ -25,8 +25,8 @@ const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
   onSeek,
   onVolumeChange,
 }) => {
-  const [volume, setVolume] = useState(0.7);
-  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState<number>(0.7);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
   
   // Format time display (e.g., 1:30)
   const formatTime = (time: number): string => {

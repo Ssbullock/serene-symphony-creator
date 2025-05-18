@@ -129,4 +129,4 @@ export function useAudioPlayer(meditationUrl: string, backgroundMusicId?: string
     seek,
     setVolume
   };
-} 
+}
