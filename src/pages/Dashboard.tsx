@@ -148,8 +148,6 @@ const Dashboard = () => {
     if (playingId === id) {
       // Currently playing, so pause
       audioPlayer?.pause();
-      setPlayingId(null);
-      setCurrentMeditation(null);
     } else {
       // New meditation or switching meditation
       if (audioPlayer) {
@@ -174,6 +172,15 @@ const Dashboard = () => {
         setCurrentMeditation(null);
       }
     }
+  };
+
+  // End playback and close the player
+  const handleEndPlayback = () => {
+    if (audioPlayer) {
+      audioPlayer.pause();
+    }
+    setPlayingId(null);
+    setCurrentMeditation(null);
   };
 
   // Start playing when currentMeditation changes and audioPlayer is available
@@ -327,7 +334,7 @@ const Dashboard = () => {
 
   // Calculate bottom padding when audio player is active
   const mainContentStyles = playingId ? 
-    { paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0))' } : {};
+    { paddingBottom: 'calc(8rem + env(safe-area-inset-bottom, 0))' } : {};
 
   return (
     <div className="min-h-screen flex bg-meditation-tranquil">
@@ -544,24 +551,47 @@ const Dashboard = () => {
                       </p>
                       
                       <div className="flex items-center justify-between">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handlePlayPause(meditation)}
-                          className="flex items-center"
-                        >
-                          {playingId === meditation.id ? (
-                            <>
-                              <Pause size={16} className="mr-1" />
-                              Pause
-                            </>
-                          ) : (
-                            <>
-                              <Play size={16} className="mr-1" />
-                              Play
-                            </>
-                          )}
-                        </Button>
+                        {playingId === meditation.id ? (
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handlePlayPause(meditation)}
+                              className="flex items-center"
+                            >
+                              {audioPlayer?.isPlaying ? (
+                                <>
+                                  <Pause size={16} className="mr-1" />
+                                  Pause
+                                </>
+                              ) : (
+                                <>
+                                  <Play size={16} className="mr-1" />
+                                  Play
+                                </>
+                              )}
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={handleEndPlayback}
+                              className="flex items-center"
+                            >
+                              <X size={16} className="mr-1" />
+                              End
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handlePlayPause(meditation)}
+                            className="flex items-center"
+                          >
+                            <Play size={16} className="mr-1" />
+                            Play
+                          </Button>
+                        )}
                         
                         <div className="flex gap-2">
                           <Button 

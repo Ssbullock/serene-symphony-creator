@@ -62,20 +62,10 @@ const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
   
   return (
     <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg z-50">
-      <div className="flex items-center justify-between px-4 py-3 md:px-6 max-w-screen-2xl mx-auto">
-        {/* Play/Pause Button */}
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={isPlaying ? onPause : onPlay} 
-          className="mr-2"
-        >
-          {isPlaying ? <Pause size={24} /> : <Play size={24} />}
-        </Button>
-        
-        {/* Title and Time Display - Hidden on small screens */}
-        <div className="hidden sm:flex flex-col justify-center mr-4">
-          <p className="text-sm font-medium truncate max-w-[120px] md:max-w-[240px]">{title}</p>
+      <div className="flex flex-col px-4 py-2 md:py-3 md:px-6 max-w-screen-2xl mx-auto">
+        {/* Title and Time Display - Visible on all screens at the top */}
+        <div className="flex justify-between items-center w-full mb-1 sm:mb-2">
+          <p className="text-sm font-medium truncate max-w-[170px] md:max-w-[240px]">{title}</p>
           <div className="flex text-xs text-gray-500 space-x-1">
             <span>{formatTime(currentTime)}</span>
             <span>/</span>
@@ -83,36 +73,44 @@ const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
           </div>
         </div>
         
-        {/* Progress Bar */}
-        <div className="flex-1 px-2">
-          <Slider
-            value={[currentTime]}
-            min={0}
-            max={duration || 1}
-            step={0.1}
-            onValueChange={handleSeek}
-            className="w-full"
-          />
-        </div>
-        
-        {/* Time Display for Mobile */}
-        <div className="sm:hidden text-xs text-gray-500 ml-2 mr-2">
-          {formatTime(currentTime)}
-        </div>
-        
-        {/* Volume Control - Hidden on Mobile */}
-        <div className="hidden md:flex items-center space-x-2 ml-4">
-          <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="text-gray-700">
-            {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+        {/* Controls and Progress Bar */}
+        <div className="flex items-center justify-between w-full">
+          {/* Play/Pause Button */}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={isPlaying ? onPause : onPlay} 
+            className="mr-2"
+          >
+            {isPlaying ? <Pause size={24} /> : <Play size={24} />}
           </Button>
-          <Slider
-            value={[volume]}
-            min={0}
-            max={1}
-            step={0.01}
-            onValueChange={handleVolumeChange}
-            className="w-24"
-          />
+          
+          {/* Progress Bar */}
+          <div className="flex-1 px-2">
+            <Slider
+              value={[currentTime]}
+              min={0}
+              max={duration || 1}
+              step={0.1}
+              onValueChange={handleSeek}
+              className="w-full"
+            />
+          </div>
+          
+          {/* Volume Control - Hidden on Mobile */}
+          <div className="hidden md:flex items-center space-x-2 ml-4">
+            <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="text-gray-700">
+              {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </Button>
+            <Slider
+              value={[volume]}
+              min={0}
+              max={1}
+              step={0.01}
+              onValueChange={handleVolumeChange}
+              className="w-24"
+            />
+          </div>
         </div>
       </div>
     </div>
