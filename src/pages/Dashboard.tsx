@@ -146,8 +146,19 @@ const Dashboard = () => {
     const id = meditation.id;
     
     if (playingId === id) {
-      // Currently playing, so pause
-      audioPlayer?.pause();
+      // Currently playing this meditation, so toggle play/pause
+      if (audioPlayer?.isPlaying) {
+        audioPlayer.pause();
+      } else {
+        audioPlayer.play().catch(error => {
+          console.error("Error playing audio:", error);
+          toast({
+            title: "Playback Error",
+            description: "Failed to play meditation audio",
+            variant: "destructive"
+          });
+        });
+      }
     } else {
       // New meditation or switching meditation
       if (audioPlayer) {

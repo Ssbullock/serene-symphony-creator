@@ -101,12 +101,21 @@ export function useAudioPlayer(meditationUrl: string | null, backgroundMusicId?:
 
   const pause = () => {
     if (!meditationAudioRef.current) return;
-
-    meditationAudioRef.current.pause();
-    if (backgroundAudioRef.current) {
-      backgroundAudioRef.current.pause();
+    
+    try {
+      // Explicitly pause the meditation audio
+      meditationAudioRef.current.pause();
+      
+      // Pause background music if available
+      if (backgroundAudioRef.current) {
+        backgroundAudioRef.current.pause();
+      }
+      
+      // Ensure we update the state to reflect the paused state
+      setState(prev => ({ ...prev, isPlaying: false }));
+    } catch (error) {
+      console.error('Error pausing audio:', error);
     }
-    setState(prev => ({ ...prev, isPlaying: false }));
   };
 
   const seek = (time: number) => {

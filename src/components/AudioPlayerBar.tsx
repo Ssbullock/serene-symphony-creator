@@ -60,6 +60,15 @@ const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
     onSeek(value[0]);
   };
   
+  // Handle play/pause directly through props
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      onPause();
+    } else {
+      onPlay();
+    }
+  };
+  
   return (
     <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg z-50">
       <div className="flex flex-col px-4 py-2 md:py-3 md:px-6 max-w-screen-2xl mx-auto">
@@ -79,7 +88,7 @@ const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={isPlaying ? onPause : onPlay} 
+            onClick={handlePlayPause} 
             className="mr-2"
           >
             {isPlaying ? <Pause size={24} /> : <Play size={24} />}
