@@ -8,7 +8,8 @@ interface AudioPlayerState {
   isLoading: boolean;
 }
 
-export function useAudioPlayer(meditationUrl: string, backgroundMusicId?: string | null) {
+// Always initialize the hook with default values, even when URL is null
+export function useAudioPlayer(meditationUrl: string | null, backgroundMusicId?: string | null) {
   const [state, setState] = useState<AudioPlayerState>({
     isPlaying: false,
     currentTime: 0,
@@ -20,6 +21,11 @@ export function useAudioPlayer(meditationUrl: string, backgroundMusicId?: string
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    // Only create audio elements if we have a valid URL
+    if (!meditationUrl) {
+      return;
+    }
+
     // Create meditation audio element
     const meditationAudio = new Audio(meditationUrl);
     meditationAudioRef.current = meditationAudio;

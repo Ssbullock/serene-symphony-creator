@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, Mic } from "lucide-react";
@@ -38,11 +37,12 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('free');
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
-  
-  // Audio player hook - only initialize when a meditation is playing
-  const audioPlayer = currentMeditation ? 
-    useAudioPlayer(currentMeditation.audio_url, currentMeditation.background) : 
-    null;
+
+  // Initialize audioPlayer with null and only use the actual meditation URL when available
+  const audioPlayer = useAudioPlayer(
+    currentMeditation?.audio_url || null, 
+    currentMeditation?.background || null
+  );
 
   useEffect(() => {
     setSidebarOpen(!isMobile);
@@ -178,7 +178,7 @@ const Dashboard = () => {
 
   // Start playing when currentMeditation changes and audioPlayer is available
   useEffect(() => {
-    if (currentMeditation && audioPlayer && !audioPlayer.isPlaying) {
+    if (currentMeditation && audioPlayer && !audioPlayer.isPlaying && playingId) {
       audioPlayer.play().catch(error => {
         console.error("Error playing audio:", error);
         toast({
@@ -190,7 +190,7 @@ const Dashboard = () => {
         setCurrentMeditation(null);
       });
     }
-  }, [currentMeditation, audioPlayer]);
+  }, [currentMeditation, audioPlayer, playingId]);
 
   const handleDownload = async (meditation: MeditationWithAudio) => {
     try {
@@ -326,7 +326,7 @@ const Dashboard = () => {
   };
 
   // Calculate bottom padding when audio player is active
-  const mainContentStyles = currentMeditation && audioPlayer ? 
+  const mainContentStyles = playingId ? 
     { paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0))' } : {};
 
   return (
@@ -626,9 +626,9 @@ const Dashboard = () => {
       </main>
 
       {/* Audio Player Bar */}
-      {currentMeditation && audioPlayer && (
+      {playingId && audioPlayer && (
         <AudioPlayerBar
-          title={currentMeditation.title}
+          title={currentMeditation?.title || ""}
           duration={audioPlayer.duration}
           currentTime={audioPlayer.currentTime}
           isPlaying={audioPlayer.isPlaying}
