@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, Mic } from "lucide-react";
+import { Plus, Play, Pause, Download, Trash, Clock, Settings, LogOut, User, Search, Menu, X, Info, Mic, MoreHorizontal } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,15 @@ import { UpgradePremiumModal } from "@/components/UpgradePremiumModal";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import AudioPlayerBar from "@/components/AudioPlayerBar";
 import { Meditation } from "@/types/meditation";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface MeditationWithAudio extends Meditation {
   audio_url: string;
   created_at: string;
   background: string;
   voice: string;
+  feedback?: string;
 }
 
 const Dashboard = () => {
@@ -31,16 +34,31 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [currentMeditation, setCurrentMeditation] = useState<MeditationWithAudio | null>(null);
+  const [lastPlayedId, setLastPlayedId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('free');
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [feedbackMeditationId, setFeedbackMeditationId] = useState<string | null>(null);
+  const [savingFeedback, setSavingFeedback] = useState(false);
+  const FEEDBACK_DELIMITER = '\n---\n';
 
-  // Initialize audioPlayer with null and only use the actual meditation URL when available
+  // Always use the with_bg version if available
+  const getWithBgUrl = (audioUrl: string | null) => {
+    if (!audioUrl) return null;
+    if (audioUrl.includes('supabase.co')) {
+      return audioUrl.includes('_with_bg.mp3')
+        ? audioUrl
+        : audioUrl.replace('.mp3', '_with_bg.mp3');
+    }
+    return audioUrl;
+  };
+
   const audioPlayer = useAudioPlayer(
-    currentMeditation?.audio_url || null, 
+    getWithBgUrl(currentMeditation?.audio_url) || null,
     currentMeditation?.background || null
   );
 
@@ -185,18 +203,14 @@ const Dashboard = () => {
     }
   };
 
-  // End playback and close the player
-  const handleEndPlayback = () => {
-    if (audioPlayer) {
-      audioPlayer.pause();
-    }
-    setPlayingId(null);
-    setCurrentMeditation(null);
-  };
-
   // Start playing when currentMeditation changes and audioPlayer is available
   useEffect(() => {
-    if (currentMeditation && audioPlayer && !audioPlayer.isPlaying && playingId) {
+    if (
+      currentMeditation &&
+      audioPlayer &&
+      playingId &&
+      playingId !== lastPlayedId
+    ) {
       audioPlayer.play().catch(error => {
         console.error("Error playing audio:", error);
         toast({
@@ -207,8 +221,9 @@ const Dashboard = () => {
         setPlayingId(null);
         setCurrentMeditation(null);
       });
+      setLastPlayedId(playingId);
     }
-  }, [currentMeditation, audioPlayer, playingId]);
+  }, [currentMeditation, audioPlayer, playingId, lastPlayedId, toast]);
 
   const handleDownload = async (meditation: MeditationWithAudio) => {
     try {
@@ -347,6 +362,30 @@ const Dashboard = () => {
   const mainContentStyles = playingId ? 
     { paddingBottom: 'calc(8rem + env(safe-area-inset-bottom, 0))' } : {};
 
+  // Function to open modal and load feedback
+  const openFeedbackModal = async (meditation: MeditationWithAudio) => {
+    setFeedbackMeditationId(meditation.id);
+    setFeedback("");
+  };
+
+  // Function to save feedback
+  const handleSaveFeedback = async () => {
+    if (!feedbackMeditationId) return;
+    setSavingFeedback(true);
+    const { error } = await supabase
+      .from('meditations')
+      .update({ feedback })
+      .eq('id', feedbackMeditationId);
+    setSavingFeedback(false);
+    if (error) {
+      toast({ title: "Error", description: "Failed to save feedback", variant: "destructive" });
+    } else {
+      toast({ title: "Feedback Saved", description: "Your feedback has been saved.", variant: "default" });
+      // Optionally update local state
+      setMeditations(meditations => meditations.map(m => m.id === feedbackMeditationId ? { ...m, feedback } : m));
+    }
+  };
+
   return (
     <div className="min-h-screen flex bg-meditation-tranquil">
       <button
@@ -479,20 +518,20 @@ const Dashboard = () => {
       )}
 
       <main 
-        className={`flex-1 p-6 sm:p-8 transition-all duration-300 ${
+        className={`flex-1 p-4 sm:p-8 transition-all duration-300 ${
           isMobile ? 'ml-0 mt-16' : 'md:ml-64'
         }`}
         style={mainContentStyles}
       >
-        <div className="max-w-6xl mx-auto">
-          <header className="mb-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between">
-              <div>
+        <div className="w-full mx-auto">
+          <header className="mb-8 w-full px-2">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+              <div className="flex-1 min-w-0">
                 <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {firstName}</h1>
                 <p className="text-foreground/70 mt-1">Your meditation journey continues</p>
               </div>
-              <div className="mt-4 md:mt-0">
-                <Link to="/create" className="btn-primary-gradient flex items-center">
+              <div className="mt-4 md:mt-0 w-full md:w-auto flex-shrink-0">
+                <Link to="/create" className="btn-primary-gradient flex items-center w-full md:w-auto justify-center">
                   <Plus size={18} className="mr-2" />
                   Create Meditation
                 </Link>
@@ -500,21 +539,21 @@ const Dashboard = () => {
             </div>
           </header>
 
-          <div className="mb-8">
-            <div className="relative">
+          <div className="mb-8 w-full px-2">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground/50" size={18} />
               <Input
                 type="text"
                 placeholder="Search your meditations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white border-gray-200"
+                className="pl-10 bg-white border-gray-200 w-full"
               />
             </div>
           </div>
           
           <section>
-            <div className="flex items-center mb-6">
+            <div className="flex items-center mb-6 px-2">
               <h2 className="text-xl font-semibold">Your Meditations</h2>
               <TooltipProvider>
                 <Tooltip>
@@ -537,111 +576,119 @@ const Dashboard = () => {
                 ))}
               </div>
             ) : filteredMeditations.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredMeditations.map((meditation) => (
-                  <div 
-                    key={meditation.id} 
-                    className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
-                  >
-                    <div className={`h-2 ${
-                      meditation.style === 'mindfulness' ? 'bg-blue-400' :
-                      meditation.style === 'breathwork' ? 'bg-green-400' :
-                      meditation.style === 'bodyscan' ? 'bg-purple-400' :
-                      meditation.style === 'visualization' ? 'bg-yellow-400' :
-                      'bg-gray-400'
-                    }`}></div>
-                    <div className="p-5">
-                      <h3 className="font-semibold text-lg mb-1">{meditation.title}</h3>
-                      <div className="flex items-center text-sm text-foreground/70 mb-3">
-                        <span>{meditation.duration} minutes</span>
-                        <span className="mx-2">•</span>
-                        <span>{meditation.style}</span>
-                      </div>
-                      <p className="text-xs text-foreground/50 mb-4">
-                        Created {formatCreationDate(meditation.created_at)}
-                      </p>
-                      
-                      <div className="flex items-center justify-between">
-                        {playingId === meditation.id ? (
-                          <div className="flex items-center space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handlePlayPause(meditation)}
-                              className="flex items-center"
-                            >
-                              {audioPlayer?.isPlaying ? (
-                                <>
-                                  <Pause size={16} className="mr-1" />
-                                  Pause
-                                </>
-                              ) : (
-                                <>
-                                  <Play size={16} className="mr-1" />
-                                  Play
-                                </>
-                              )}
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={handleEndPlayback}
-                              className="flex items-center"
-                            >
-                              <X size={16} className="mr-1" />
-                              End
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handlePlayPause(meditation)}
-                            className="flex items-center"
-                          >
-                            <Play size={16} className="mr-1" />
-                            Play
-                          </Button>
-                        )}
-                        
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => handleDownload(meditation)}
-                          >
-                            <Download size={16} />
-                          </Button>
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <Trash size={16} className="text-red-500" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Meditation</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete "{meditation.title}"? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDelete(meditation.id)}
-                                  className="bg-red-500 hover:bg-red-600"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+              <div className="flex flex-col gap-3 w-full">
+                {filteredMeditations.map((meditation) => {
+                  const isPlaying = playingId === meditation.id && audioPlayer?.isPlaying;
+                  const styleColor =
+                    meditation.style === 'mindfulness' ? 'border-blue-400' :
+                    meditation.style === 'breathwork' ? 'border-green-400' :
+                    meditation.style === 'bodyscan' ? 'border-purple-400' :
+                    meditation.style === 'visualization' ? 'border-yellow-400' :
+                    'border-gray-400';
+                  return (
+                    <div
+                      key={meditation.id}
+                      className={`flex items-center bg-white rounded-lg shadow-sm border border-gray-100 px-2 py-2 transition hover:shadow-md w-full ${styleColor} border-l-4 gap-x-1`}
+                    >
+                      {/* Play/Pause Button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handlePlayPause(meditation)}
+                        className="flex-shrink-0"
+                      >
+                        {isPlaying ? <Pause size={22} /> : <Play size={22} />}
+                      </Button>
+                      {/* Title and Details */}
+                      <div className="flex-1 min-w-0 w-0">
+                        <div className="truncate font-semibold text-base text-foreground mb-0.5 w-full">{meditation.title}</div>
+                        <div className="flex items-center gap-2 text-xs text-foreground/60 w-full flex-wrap">
+                          <span className="capitalize">{meditation.style}</span>
+                          <span>•</span>
+                          <span>{meditation.duration} min</span>
                         </div>
                       </div>
+                      {/* Three Dots Button and Modal */}
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={() => openFeedbackModal(meditation)}>
+                            <MoreHorizontal size={22} />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent
+                          className="p-6 transition-all duration-300 fixed bottom-0 left-0 right-0 w-full !w-full !max-w-none rounded-t-2xl animate-slide-up max-h-[75vh] overflow-y-auto"
+                        >
+                          <div className="flex justify-end gap-2 mb-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className=""
+                              onClick={() => handleDownload(meditation)}
+                              aria-label="Download"
+                            >
+                              <Download size={18} />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className=""
+                              onClick={() => handleDelete(meditation.id)}
+                              aria-label="Delete"
+                            >
+                              <Trash size={18} />
+                            </Button>
+                          </div>
+                          <div className="mt-6">
+                            <h4 className="font-semibold mb-2">Feedback</h4>
+                            <textarea
+                              className="w-full border rounded-md p-2 mb-2"
+                              rows={4}
+                              placeholder="Share your thoughts, questions, or insights from this meditation..."
+                              value={feedbackMeditationId === meditation.id ? feedback : (meditation.feedback || "")}
+                              onChange={e => setFeedback(e.target.value)}
+                              disabled={savingFeedback}
+                            />
+                            <Button
+                              className="w-full"
+                              size="sm"
+                              onClick={async () => {
+                                setSavingFeedback(true);
+                                // Prepend new feedback to existing feedback, separated by delimiter
+                                const previousFeedback = meditation.feedback || '';
+                                const newFeedbackBlock = feedback.trim();
+                                let updatedFeedback = newFeedbackBlock;
+                                if (previousFeedback) {
+                                  updatedFeedback = `${newFeedbackBlock}${FEEDBACK_DELIMITER}${previousFeedback}`;
+                                }
+                                const { error } = await supabase
+                                  .from('meditations')
+                                  .update({ feedback: updatedFeedback })
+                                  .eq('id', meditation.id);
+                                setSavingFeedback(false);
+                                if (error) {
+                                  toast({ title: "Error", description: "Failed to save feedback", variant: "destructive" });
+                                } else {
+                                  toast({ title: "Feedback Saved", description: "Your feedback has been saved.", variant: "default" });
+                                  setMeditations(prevMeditations => prevMeditations.map(m => m.id === meditation.id ? { ...m, feedback: updatedFeedback } : m));
+                                  setFeedback(""); // Clear textarea after save
+                                }
+                              }}
+                              disabled={savingFeedback || !feedbackMeditationId}
+                            >
+                              {savingFeedback ? "Saving..." : "Save Feedback"}
+                            </Button>
+                          </div>
+                          {meditation.feedback && meditation.feedback.split(FEEDBACK_DELIMITER).map((entry, idx) => (
+                            <div key={idx} className="mt-4 bg-gray-50 rounded-md p-2 text-xs text-gray-700">
+                              <div className="font-semibold mb-1">Feedback</div>
+                              <div className="mb-1 whitespace-pre-line">{entry}</div>
+                            </div>
+                          ))}
+                        </DialogContent>
+                      </Dialog>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -677,6 +724,10 @@ const Dashboard = () => {
           onPause={audioPlayer.pause}
           onSeek={audioPlayer.seek}
           onVolumeChange={audioPlayer.setVolume}
+          onClose={() => {
+            setPlayingId(null);
+            setCurrentMeditation(null);
+          }}
         />
       )}
 

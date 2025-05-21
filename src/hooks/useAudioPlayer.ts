@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 
 interface AudioPlayerState {
@@ -23,61 +22,75 @@ export function useAudioPlayer(meditationUrl: string | null, backgroundMusicId?:
   useEffect(() => {
     // Only create audio elements if we have a valid URL
     if (!meditationUrl) {
+      meditationAudioRef.current = null;
       return;
     }
 
-    // Create meditation audio element
-    const meditationAudio = new Audio(meditationUrl);
-    meditationAudioRef.current = meditationAudio;
+    // If the current audio element already has the correct src, don't recreate it
+    if (
+      meditationAudioRef.current &&
+      meditationAudioRef.current.src === meditationUrl
+    ) {
+      // No need to recreate
+    } else {
+      // Create meditation audio element
+      const meditationAudio = new Audio(meditationUrl);
+      meditationAudioRef.current = meditationAudio;
+
+      // Set up meditation audio event listeners
+      const handleTimeUpdate = () => {
+        setState(prev => ({
+          ...prev,
+          currentTime: meditationAudio.currentTime,
+          duration: meditationAudio.duration
+        }));
+      };
+
+      const handleLoadedMetadata = () => {
+        setState(prev => ({
+          ...prev,
+          duration: meditationAudio.duration,
+          isLoading: false
+        }));
+      };
+
+      const handleEnded = () => {
+        if (backgroundAudioRef.current) {
+          backgroundAudioRef.current.pause();
+          backgroundAudioRef.current.currentTime = 0;
+        }
+        setState(prev => ({ ...prev, isPlaying: false }));
+      };
+
+      meditationAudio.addEventListener('timeupdate', handleTimeUpdate);
+      meditationAudio.addEventListener('loadedmetadata', handleLoadedMetadata);
+      meditationAudio.addEventListener('ended', handleEnded);
+
+      // Cleanup function for previous audio
+      return () => {
+        meditationAudio.removeEventListener('timeupdate', handleTimeUpdate);
+        meditationAudio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        meditationAudio.removeEventListener('ended', handleEnded);
+        meditationAudio.pause();
+      };
+    }
 
     // Create background audio element if ID is provided
     if (backgroundMusicId && backgroundMusicId !== 'none') {
-      const backgroundAudio = new Audio(`/music/${backgroundMusicId}.mp3`);
-      backgroundAudio.loop = true;
-      backgroundAudio.volume = 0.3; // 30% volume for background music
-      backgroundAudioRef.current = backgroundAudio;
+      if (
+        backgroundAudioRef.current &&
+        backgroundAudioRef.current.src === `/music/${backgroundMusicId}.mp3`
+      ) {
+        // No need to recreate
+      } else {
+        const backgroundAudio = new Audio(`/music/${backgroundMusicId}.mp3`);
+        backgroundAudio.loop = true;
+        backgroundAudio.volume = 0.3; // 30% volume for background music
+        backgroundAudioRef.current = backgroundAudio;
+      }
+    } else {
+      backgroundAudioRef.current = null;
     }
-
-    // Set up meditation audio event listeners
-    const handleTimeUpdate = () => {
-      setState(prev => ({
-        ...prev,
-        currentTime: meditationAudio.currentTime,
-        duration: meditationAudio.duration
-      }));
-    };
-
-    const handleLoadedMetadata = () => {
-      setState(prev => ({
-        ...prev,
-        duration: meditationAudio.duration,
-        isLoading: false
-      }));
-    };
-
-    const handleEnded = () => {
-      if (backgroundAudioRef.current) {
-        backgroundAudioRef.current.pause();
-        backgroundAudioRef.current.currentTime = 0;
-      }
-      setState(prev => ({ ...prev, isPlaying: false }));
-    };
-
-    meditationAudio.addEventListener('timeupdate', handleTimeUpdate);
-    meditationAudio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    meditationAudio.addEventListener('ended', handleEnded);
-
-    // Cleanup function
-    return () => {
-      meditationAudio.removeEventListener('timeupdate', handleTimeUpdate);
-      meditationAudio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      meditationAudio.removeEventListener('ended', handleEnded);
-      
-      meditationAudio.pause();
-      if (backgroundAudioRef.current) {
-        backgroundAudioRef.current.pause();
-      }
-    };
   }, [meditationUrl, backgroundMusicId]);
 
   const play = async () => {

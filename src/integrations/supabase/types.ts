@@ -21,6 +21,7 @@ export type Database = {
           title: string
           user_id: string
           voice: string
+          feedback?: string | null
         }
         Insert: {
           audio_url: string
@@ -33,6 +34,7 @@ export type Database = {
           title: string
           user_id: string
           voice: string
+          feedback?: string | null
         }
         Update: {
           audio_url?: string
@@ -45,6 +47,7 @@ export type Database = {
           title?: string
           user_id?: string
           voice?: string
+          feedback?: string | null
         }
         Relationships: []
       }

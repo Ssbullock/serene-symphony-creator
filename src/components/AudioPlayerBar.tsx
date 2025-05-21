@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, ChevronDown } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 
@@ -13,6 +12,7 @@ interface AudioPlayerBarProps {
   onPause: () => void;
   onSeek: (time: number) => void;
   onVolumeChange: (volume: number) => void;
+  onClose: () => void;
 }
 
 const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
@@ -24,6 +24,7 @@ const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
   onPause,
   onSeek,
   onVolumeChange,
+  onClose,
 }) => {
   const [volume, setVolume] = useState<number>(0.7);
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -72,9 +73,14 @@ const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
   return (
     <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg z-50">
       <div className="flex flex-col px-4 py-2 md:py-3 md:px-6 max-w-screen-2xl mx-auto">
-        {/* Title and Time Display - Visible on all screens at the top */}
+        {/* Top Row: Down caret, Title, Time */}
         <div className="flex justify-between items-center w-full mb-1 sm:mb-2">
-          <p className="text-sm font-medium truncate max-w-[170px] md:max-w-[240px]">{title}</p>
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" onClick={onClose} className="mr-2">
+              <ChevronDown size={22} />
+            </Button>
+            <p className="text-sm font-medium truncate max-w-[140px] md:max-w-[200px]">{title}</p>
+          </div>
           <div className="flex text-xs text-gray-500 space-x-1">
             <span>{formatTime(currentTime)}</span>
             <span>/</span>
@@ -106,8 +112,8 @@ const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
             />
           </div>
           
-          {/* Volume Control - Hidden on Mobile */}
-          <div className="hidden md:flex items-center space-x-2 ml-4">
+          {/* Volume Control - Visible on all screens */}
+          <div className="flex items-center space-x-2 ml-4">
             <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="text-gray-700">
               {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </Button>
