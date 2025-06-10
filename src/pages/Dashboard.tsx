@@ -46,19 +46,9 @@ const Dashboard = () => {
   const [savingFeedback, setSavingFeedback] = useState(false);
   const FEEDBACK_DELIMITER = '\n---\n';
 
-  // Always use the with_bg version if available
-  const getWithBgUrl = (audioUrl: string | null) => {
-    if (!audioUrl) return null;
-    if (audioUrl.includes('supabase.co')) {
-      return audioUrl.includes('_with_bg.mp3')
-        ? audioUrl
-        : audioUrl.replace('.mp3', '_with_bg.mp3');
-    }
-    return audioUrl;
-  };
-
+  // Use the original audio URL without background music by default
   const audioPlayer = useAudioPlayer(
-    getWithBgUrl(currentMeditation?.audio_url) || null,
+    currentMeditation?.audio_url || null,
     currentMeditation?.background || null
   );
 
@@ -618,26 +608,6 @@ const Dashboard = () => {
                         <DialogContent
                           className="p-6 transition-all duration-300 fixed bottom-0 left-0 right-0 w-full !w-full !max-w-none rounded-t-2xl animate-slide-up max-h-[75vh] overflow-y-auto"
                         >
-                          <div className="flex justify-end gap-2 mb-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className=""
-                              onClick={() => handleDownload(meditation)}
-                              aria-label="Download"
-                            >
-                              <Download size={18} />
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              className=""
-                              onClick={() => handleDelete(meditation.id)}
-                              aria-label="Delete"
-                            >
-                              <Trash size={18} />
-                            </Button>
-                          </div>
                           <div className="mt-6">
                             <h4 className="font-semibold mb-2">Feedback</h4>
                             <textarea
@@ -649,7 +619,7 @@ const Dashboard = () => {
                               disabled={savingFeedback}
                             />
                             <Button
-                              className="w-full"
+                              className="w-full mb-4"
                               size="sm"
                               onClick={async () => {
                                 setSavingFeedback(true);
@@ -677,6 +647,26 @@ const Dashboard = () => {
                             >
                               {savingFeedback ? "Saving..." : "Save Feedback"}
                             </Button>
+                            
+                            {/* Moved download and delete buttons here, away from the X */}
+                            <div className="flex gap-2 mb-4">
+                              <Button
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => handleDownload(meditation)}
+                              >
+                                <Download size={16} className="mr-2" />
+                                Download
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                className="flex-1"
+                                onClick={() => handleDelete(meditation.id)}
+                              >
+                                <Trash size={16} className="mr-2" />
+                                Delete
+                              </Button>
+                            </div>
                           </div>
                           {meditation.feedback && meditation.feedback.split(FEEDBACK_DELIMITER).map((entry, idx) => (
                             <div key={idx} className="mt-4 bg-gray-50 rounded-md p-2 text-xs text-gray-700">

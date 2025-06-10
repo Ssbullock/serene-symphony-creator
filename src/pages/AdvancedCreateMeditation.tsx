@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Play, Pause, Save, Download, Info, 
-  Music, FileText, Mic, Wand2, ChevronDown, CheckCircle 
+  Music, FileText, Mic, Wand2, ChevronDown, CheckCircle, MoreHorizontal, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/lib/supabase";
 
 const meditationStyles = [
   {
@@ -42,6 +43,41 @@ const meditationStyles = [
     id: "visualization",
     name: "Nature Visualization",
     description: "Mental imagery for deep relaxation"
+  },
+  {
+    id: "gratitude",
+    name: "Gratitude Meditation",
+    description: "Cultivating appreciation and thankfulness"
+  },
+  {
+    id: "self-inquiry",
+    name: "Self-Inquiry Meditation",
+    description: "Deep introspection and self-understanding"
+  },
+  {
+    id: "metta",
+    name: "Metta (Loving-Kindness)",
+    description: "Cultivating compassion and loving-kindness"
+  },
+  {
+    id: "chakra",
+    name: "Chakra Meditation",
+    description: "Balancing energy centers throughout the body"
+  },
+  {
+    id: "mantra",
+    name: "Mantra Meditation",
+    description: "Sacred sound repetition for focused awareness"
+  },
+  {
+    id: "yoga",
+    name: "Yoga (as meditation)",
+    description: "Mindful movement and breath coordination"
+  },
+  {
+    id: "walking",
+    name: "Walking Meditation",
+    description: "Mindful movement and step-by-step awareness"
   }
 ];
 
@@ -262,11 +298,29 @@ This vibe should be consistent throughout the meditation, helping the listener t
       return;
     }
     
-    const audioPath = `/music/${audioId}.mp3`;
+    // Get the Supabase storage URL for background music
+    const { data } = supabase.storage
+      .from('meditations')
+      .getPublicUrl(`music/${audioId}.mp3`);
+    
+    const audioPath = data.publicUrl;
+    console.log("Playing background preview from:", audioPath);
     
     const audio = new Audio(audioPath);
     audio.volume = 0.5;
     audio.loop = true;
+    
+    // Add error handling
+    audio.addEventListener('error', (error) => {
+      console.error("Error playing background audio:", error);
+      toast({
+        title: "Playback Error",
+        description: "Could not play the audio sample. Please try again.",
+        variant: "destructive"
+      });
+      setPlayingBackground(null);
+    });
+    
     audio.play().catch(error => {
       console.error("Error playing audio:", error);
       toast({
@@ -274,6 +328,7 @@ This vibe should be consistent throughout the meditation, helping the listener t
         description: "Could not play the audio sample. Please try again.",
         variant: "destructive"
       });
+      setPlayingBackground(null);
     });
     
     backgroundAudioRef.current = audio;
