@@ -1,0 +1,23 @@
+{
+  "version": 0,
+  "use-external-names": false,
+  "case-sensitive": false,
+  "roots": [{
+    "type": "directory",
+    "name": "/Users/simon/Desktop/Serene/serene-symphony-creator/ios/DerivedData/BDA5DBF2-2FC6-46D5-BF84-F54C668EBE66/Build/Products/Debug-iphonesimulator/Capacitor/Capacitor.framework/Modules",
+    "contents": [{
+      "type": "file",
+      "name": "module.modulemap",
+      "external-contents": "/Users/simon/Desktop/Serene/serene-symphony-creator/ios/DerivedData/BDA5DBF2-2FC6-46D5-BF84-F54C668EBE66/Build/Intermediates.noindex/Pods.build/Debug-iphonesimulator/Capacitor.build/unextended-module.modulemap",
+    }]
+    },
+    {
+    "type": "directory",
+    "name": "/Users/simon/Desktop/Serene/serene-symphony-creator/ios/DerivedData/BDA5DBF2-2FC6-46D5-BF84-F54C668EBE66/Build/Products/Debug-iphonesimulator/Capacitor/Capacitor.framework/Headers",
+    "contents": [{
+      "type": "file",
+      "name": "Capacitor-Swift.h",
+      "external-contents": "/Users/simon/Desktop/Serene/serene-symphony-creator/ios/DerivedData/BDA5DBF2-2FC6-46D5-BF84-F54C668EBE66/Build/Intermediates.noindex/Pods.build/Debug-iphonesimulator/Capacitor.build/unextended-interface-header.h",
+    }]
+  }]
+}
