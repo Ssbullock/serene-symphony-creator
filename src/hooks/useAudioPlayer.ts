@@ -1,5 +1,5 @@
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 interface AudioPlayerState {
   isPlaying: boolean;
@@ -20,65 +20,107 @@ export function useAudioPlayer(meditationUrl: string | null, backgroundMusicId?:
   const meditationAudioRef = useRef<HTMLAudioElement | null>(null);
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Helper function to get Supabase storage URL for background music
+  const getBackgroundMusicUrl = (musicId: string) => {
+    const { data } = supabase.storage
+      .from('meditations') // Updated to use the correct bucket name
+      .getPublicUrl(`music/${musicId}.mp3`);
+    return data.publicUrl;
+  };
+
   useEffect(() => {
     // Only create audio elements if we have a valid URL
     if (!meditationUrl) {
+      meditationAudioRef.current = null;
       return;
     }
 
-    // Create meditation audio element
-    const meditationAudio = new Audio(meditationUrl);
-    meditationAudioRef.current = meditationAudio;
+    // If the current audio element already has the correct src, don't recreate it
+    if (
+      meditationAudioRef.current &&
+      meditationAudioRef.current.src === meditationUrl
+    ) {
+      // No need to recreate
+    } else {
+      // Create meditation audio element
+      const meditationAudio = new Audio(meditationUrl);
+      meditationAudioRef.current = meditationAudio;
 
+      // Set up meditation audio event listeners
+      const handleTimeUpdate = () => {
+        setState(prev => ({
+          ...prev,
+          currentTime: meditationAudio.currentTime,
+          duration: meditationAudio.duration
+        }));
+      };
+
+      const handleLoadedMetadata = () => {
+        setState(prev => ({
+          ...prev,
+          duration: meditationAudio.duration,
+          isLoading: false
+        }));
+      };
+
+      const handleEnded = () => {
+        if (backgroundAudioRef.current) {
+          backgroundAudioRef.current.pause();
+          backgroundAudioRef.current.currentTime = 0;
+        }
+        setState(prev => ({ ...prev, isPlaying: false }));
+      };
+
+      meditationAudio.addEventListener('timeupdate', handleTimeUpdate);
+      meditationAudio.addEventListener('loadedmetadata', handleLoadedMetadata);
+      meditationAudio.addEventListener('ended', handleEnded);
+
+      // Cleanup function for previous audio
+      return () => {
+        meditationAudio.removeEventListener('timeupdate', handleTimeUpdate);
+        meditationAudio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        meditationAudio.removeEventListener('ended', handleEnded);
+        meditationAudio.pause();
+      };
+    }
+  }, [meditationUrl]);
+
+  useEffect(() => {
     // Create background audio element if ID is provided
     if (backgroundMusicId && backgroundMusicId !== 'none') {
-      const backgroundAudio = new Audio(`/music/${backgroundMusicId}.mp3`);
-      backgroundAudio.loop = true;
-      backgroundAudio.volume = 0.3; // 30% volume for background music
-      backgroundAudioRef.current = backgroundAudio;
-    }
-
-    // Set up meditation audio event listeners
-    const handleTimeUpdate = () => {
-      setState(prev => ({
-        ...prev,
-        currentTime: meditationAudio.currentTime,
-        duration: meditationAudio.duration
-      }));
-    };
-
-    const handleLoadedMetadata = () => {
-      setState(prev => ({
-        ...prev,
-        duration: meditationAudio.duration,
-        isLoading: false
-      }));
-    };
-
-    const handleEnded = () => {
-      if (backgroundAudioRef.current) {
-        backgroundAudioRef.current.pause();
-        backgroundAudioRef.current.currentTime = 0;
-      }
-      setState(prev => ({ ...prev, isPlaying: false }));
-    };
-
-    meditationAudio.addEventListener('timeupdate', handleTimeUpdate);
-    meditationAudio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    meditationAudio.addEventListener('ended', handleEnded);
-
-    // Cleanup function
-    return () => {
-      meditationAudio.removeEventListener('timeupdate', handleTimeUpdate);
-      meditationAudio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      meditationAudio.removeEventListener('ended', handleEnded);
+      const backgroundMusicUrl = getBackgroundMusicUrl(backgroundMusicId);
       
-      meditationAudio.pause();
+      if (
+        backgroundAudioRef.current &&
+        backgroundAudioRef.current.src === backgroundMusicUrl
+      ) {
+        // No need to recreate
+      } else {
+        console.log(`Loading background music from: ${backgroundMusicUrl}`);
+        const backgroundAudio = new Audio(backgroundMusicUrl);
+        backgroundAudio.loop = true;
+        backgroundAudio.volume = 0.3; // 30% volume for background music
+        
+        // Add error handling for background music
+        backgroundAudio.addEventListener('error', (e) => {
+          console.error('Error loading background music:', e);
+          console.log('Background music URL that failed:', backgroundMusicUrl);
+        });
+        
+        backgroundAudio.addEventListener('loadeddata', () => {
+          console.log('Background music loaded successfully');
+        });
+        
+        backgroundAudioRef.current = backgroundAudio;
+      }
+    } else {
+      // Clean up background audio if none selected
       if (backgroundAudioRef.current) {
         backgroundAudioRef.current.pause();
+        backgroundAudioRef.current = null;
       }
-    };
-  }, [meditationUrl, backgroundMusicId]);
+    }
+  }, [backgroundMusicId]);
 
   const play = async () => {
     if (!meditationAudioRef.current) return;
@@ -89,7 +131,13 @@ export function useAudioPlayer(meditationUrl: string | null, backgroundMusicId?:
       
       // Play background music if available
       if (backgroundAudioRef.current) {
-        await backgroundAudioRef.current.play();
+        try {
+          await backgroundAudioRef.current.play();
+          console.log('Background music started playing');
+        } catch (bgError) {
+          console.error('Error playing background music:', bgError);
+          // Continue even if background music fails
+        }
       }
       
       setState(prev => ({ ...prev, isPlaying: true }));
