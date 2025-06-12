@@ -75,14 +75,6 @@ const App = () => (
                   } 
                 />
                 <Route 
-                  path="/advanced-create" 
-                  element={
-                    <ProtectedRoute>
-                      <AdvancedCreateMeditation />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
                   path="/settings" 
                   element={
                     <ProtectedRoute>

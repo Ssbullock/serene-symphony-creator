@@ -6,9 +6,9 @@ import { CheckCircle } from "lucide-react";
 import { useUser } from '@/hooks/use-user';
 
 const PAYMENT_LINKS = {
-  premium_monthly: 'https://buy.stripe.com/test_bIYg0X9EG9pTgZqfYY',
-  premium_annual: 'https://buy.stripe.com/test_dR6cOL3gifOh8sUcMO',
-  lifetime: 'https://buy.stripe.com/test_7sIbKH6su7hL38AeUX',
+  premium_monthly: 'https://buy.stripe.com/cNi3cv1Z08CW8Ng3xS8g001',
+  premium_annual: 'https://buy.stripe.com/6oU00j9rs7yS1kO7O88g002',
+  lifetime: 'https://buy.stripe.com/eVqeVdbzA6uOfbEfgA8g000',
 } as const;
 
 type PlanType = keyof typeof PAYMENT_LINKS;
